@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Hollow Knight - Hallownest Chronicles</title>
+  <meta name="description" content="A 2D Metroidvania action platformer inspired by Hollow Knight built with HTML5 Canvas and Web Audio API." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+    
+    <!-- Controls Guide Overlay -->
+    <div id="controls-hint" class="hud-overlay">
+      <div class="controls-pill">
+        <span><b>Move:</b> WASD / Arrows</span>
+        <span><b>Jump:</b> Z / J / Space</span>
+        <span><b>Slash:</b> X / K (Hold Up/Down)</span>
+        <span><b>Dash:</b> C / L</span>
+        <span><b>Focus Heal:</b> Hold F / I / H</span>
+        <span><b>Map:</b> M / Tab</span>
+        <span><b>Interact:</b> E / Down</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+:root {
+  --font-gothic: 'Cinzel', serif;
+  --font-title: 'Cinzel Decorative', cursive;
+  --font-body: 'Inter', sans-serif;
+  
+  --bg-dark: #07090e;
+  --panel-bg: rgba(14, 18, 28, 0.88);
+  --panel-border: rgba(160, 190, 220, 0.25);
+  --glow-cyan: rgba(120, 210, 255, 0.6);
+  --soul-white: #eaf4ff;
+  --geo-gold: #ffcf40;
+  --mask-white: #f5f7fa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: #d1d8e0;
+  font-family: var(--font-body);
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #0e1522 0%, #05070a 100%);
+}
+
+#game-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+}
+
+.hud-overlay {
+  position: absolute;
+  pointer-events: none;
+}
+
+#controls-hint {
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+}
+
+.controls-pill {
+  display: flex;
+  gap: 16px;
+  background: rgba(10, 14, 22, 0.75);
+  border: 1px solid rgba(120, 160, 200, 0.2);
+  padding: 8px 18px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+  color: #b0c4de;
+  letter-spacing: 0.5px;
+}
+
+.controls-pill b {
+  color: var(--soul-white);
+  font-weight: 600;
+}

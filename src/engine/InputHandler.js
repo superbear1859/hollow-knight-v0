@@ -1,0 +1,82 @@
+export class InputHandler {
+  constructor() {
+    this.keys = {};
+    this.justPressedKeys = {};
+    this.mouseClicked = false;
+    this.mousePos = { x: 0, y: 0 };
+
+    window.addEventListener('keydown', (e) => {
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code) || e.key === ' ') {
+        e.preventDefault();
+      }
+
+      const keysToSet = [e.code, e.key, e.key?.toLowerCase(), e.key?.toUpperCase()].filter(Boolean);
+
+      keysToSet.forEach(k => {
+        if (!this.keys[k]) {
+          this.justPressedKeys[k] = true;
+        }
+        this.keys[k] = true;
+      });
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const keysToClear = [e.code, e.key, e.key?.toLowerCase(), e.key?.toUpperCase()].filter(Boolean);
+
+      keysToClear.forEach(k => {
+        this.keys[k] = false;
+        this.justPressedKeys[k] = false;
+      });
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      this.mouseClicked = true;
+      const canvas = document.getElementById('game-canvas');
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        this.mousePos = {
+          x: (e.clientX - rect.left) * scaleX,
+          y: (e.clientY - rect.top) * scaleY
+        };
+      } else {
+        this.mousePos = { x: e.clientX, y: e.clientY };
+      }
+    });
+  }
+
+  isDown(action) {
+    const codes = this.getCodesForAction(action);
+    return codes.some(code => this.keys[code]);
+  }
+
+  isJustPressed(action) {
+    const codes = this.getCodesForAction(action);
+    return codes.some(code => this.justPressedKeys[code]);
+  }
+
+  getCodesForAction(action) {
+    switch (action) {
+      case 'left': return ['ArrowLeft', 'KeyA', 'a', 'A'];
+      case 'right': return ['ArrowRight', 'KeyD', 'd', 'D'];
+      case 'up': return ['ArrowUp', 'KeyW', 'w', 'W'];
+      case 'down': return ['ArrowDown', 'KeyS', 's', 'S'];
+      case 'jump': return ['Space', ' ', 'KeyZ', 'z', 'Z', 'KeyJ', 'j', 'J', 'Enter'];
+      case 'attack': return ['KeyX', 'x', 'X', 'KeyK', 'k', 'K'];
+      case 'dash': return ['KeyC', 'c', 'C', 'KeyL', 'l', 'L', 'ShiftLeft', 'ShiftRight', 'Shift'];
+      case 'spell': return ['KeyQ', 'q', 'Q', 'KeyF', 'f', 'F', 'KeyB', 'b', 'B', 'Digit2', '2'];
+      case 'focus': return ['KeyH', 'h', 'H', 'KeyI', 'i', 'I', 'KeyV', 'v', 'V', 'KeyR', 'r', 'R', 'Digit1', '1'];
+      case 'map': return ['KeyM', 'm', 'M', 'Tab'];
+      case 'interact': return ['KeyE', 'e', 'E', 'ArrowDown', 'KeyS', 's', 'S'];
+      case 'pause': return ['Escape', 'KeyP', 'p', 'P', 'Backspace'];
+      case 'exit': return ['Escape', 'KeyP', 'p', 'P', 'Backspace'];
+      default: return [];
+    }
+  }
+
+  update() {
+    this.justPressedKeys = {};
+    this.mouseClicked = false;
+  }
+}
