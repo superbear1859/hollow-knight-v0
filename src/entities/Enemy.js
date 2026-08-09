@@ -29,7 +29,7 @@ export class Enemy extends Entity {
     particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 8, '#ffffff');
 
     if (player) {
-      player.addSoul(11);
+      player.addSoul(1);
     }
 
     if (this.hp <= 0) {

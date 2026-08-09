@@ -2,11 +2,11 @@ import { Entity } from '../entities/Entity.js';
 
 export class StagStation extends Entity {
   constructor(x, y, stationId, name, roomId) {
-    super(x, y, 64, 48);
+    super(x, y, 32, 28);
     this.stationId = stationId;
     this.name = name;
     this.roomId = roomId;
-    this.interactRadius = 140;
+    this.interactRadius = 80;
     this.active = true;
   }
 
@@ -24,42 +24,43 @@ export class StagStation extends Entity {
 
     ctx.save();
 
-    // Stag Station Iron Arch & Bell Structure
-    ctx.fillStyle = '#1c2434';
-    ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 2.5;
+    // Sleek Compact Wrought Iron Post
+    ctx.fillStyle = '#181e2b';
+    ctx.strokeStyle = '#c5a038';
+    ctx.lineWidth = 1.5;
 
-    ctx.fillRect(screenX, screenY + 10, this.width, this.height - 10);
-    ctx.strokeRect(screenX, screenY + 10, this.width, this.height - 10);
+    // Post Pillar
+    ctx.fillRect(screenX + 12, screenY + 10, 8, 18);
+    ctx.strokeRect(screenX + 12, screenY + 10, 8, 18);
 
-    // Glowing Golden Bell Icon
+    // Golden Bell Top Dome
     ctx.fillStyle = '#d4af37';
     ctx.beginPath();
-    ctx.arc(screenX + this.width / 2, screenY + 24, 12, Math.PI, Math.PI * 2);
+    ctx.arc(screenX + this.width / 2, screenY + 9, 7, Math.PI, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#101726';
-    ctx.font = '700 11px Cinzel, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('STAG', screenX + this.width / 2, screenY + 42);
+    // Small Bell Ringing Base
+    ctx.fillStyle = '#ffcf40';
+    ctx.fillRect(screenX + this.width / 2 - 8, screenY + 9, 16, 3);
 
-    // Interactive Proximity Banner
+    // Interactive Proximity Banner (Sleek & Compact)
     if (isPlayerNear) {
       ctx.fillStyle = 'rgba(10, 16, 28, 0.9)';
       ctx.strokeStyle = '#ffcf40';
-      ctx.lineWidth = 1.5;
-      const promptW = 190;
-      const promptH = 26;
+      ctx.lineWidth = 1.2;
+      const promptW = 140;
+      const promptH = 20;
       const promptX = screenX + this.width / 2 - promptW / 2;
-      const promptY = screenY - 24;
+      const promptY = screenY - 18;
 
       ctx.fillRect(promptX, promptY, promptW, promptH);
       ctx.strokeRect(promptX, promptY, promptW, promptH);
 
       ctx.fillStyle = '#ffcf40';
-      ctx.font = '700 11px Cinzel, serif';
-      ctx.fillText(`🔔 CALL STAG [E / DOWN]`, screenX + this.width / 2, promptY + 17);
+      ctx.font = '700 10px Cinzel, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🔔 STAG [E / DOWN]`, screenX + this.width / 2, promptY + 14);
     }
 
     ctx.restore();

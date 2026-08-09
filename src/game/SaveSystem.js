@@ -6,8 +6,8 @@ export class SaveSystem {
       geo: 0,
       maxMasks: 5,
       masks: 5,
-      soul: 100, // Start with full soul vessel
-      maxSoul: 100,
+      soul: 0, // Start with 0 soul
+      maxSoul: 9,
       unlockedAbilities: {
         dash: false,
         shadowDash: false,
@@ -34,11 +34,14 @@ export class SaveSystem {
       if (!dataStr) return this.getInitialData();
       const loaded = { ...this.getInitialData(), ...JSON.parse(dataStr) };
 
-      // Sanitize old save data with invalid sky spawn coordinates
+      // Sanitize old save data with invalid sky spawn coordinates or old 100 soul scale
       if (loaded.lastBenchRoom === 'dirtmouth_01' && (loaded.lastBenchY < 500 || loaded.lastBenchX < 500)) {
         loaded.lastBenchX = 700;
         loaded.lastBenchY = 580;
       }
+      loaded.maxSoul = 9;
+      loaded.soul = Math.min(9, Math.round(loaded.soul > 9 ? (loaded.soul / 100) * 9 : loaded.soul));
+
       return loaded;
     } catch (e) {
       console.warn('Failed to load save state', e);

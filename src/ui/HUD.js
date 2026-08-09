@@ -43,8 +43,8 @@ export class HUD {
     ctx.fill();
     ctx.stroke();
 
-    // Liquid Soul Level (Glowing White/Cyan)
-    const soulRatio = Math.max(0, Math.min(1, player.soul / player.maxSoul));
+    // Liquid Soul Level (Glowing White/Cyan scaled to 9 Max Soul)
+    const soulRatio = Math.max(0, Math.min(1, (player.soul || 0) / 9));
     if (soulRatio > 0) {
       ctx.fillStyle = '#eaf4ff';
       ctx.beginPath();
@@ -57,6 +57,12 @@ export class HUD {
       ctx.arc(vesselX - 4, vesselY - 4, (vesselRadius * soulRatio) * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Soul Count Label
+    ctx.fillStyle = '#d8efff';
+    ctx.font = '700 10px Cinzel, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${player.soul || 0}/9`, vesselX, vesselY + 3);
 
     // 2. Health Masks (Glowing White Bone Masks)
     const maskStartX = 85;

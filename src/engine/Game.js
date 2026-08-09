@@ -11,8 +11,9 @@ import { Shop } from '../game/Shop.js';
 import { DialogueUI } from '../ui/DialogueUI.js';
 import { InventoryUI } from '../ui/InventoryUI.js';
 import { StagUI } from '../ui/StagUI.js';
+import { AbilityCheatUI } from '../ui/AbilityCheatUI.js';
 import { SaveSystem } from '../game/SaveSystem.js';
-import { GeoCoin } from '../game/Collectible.js';
+import { GeoCoin, AbilityUnlock } from '../game/Collectible.js';
 
 export class Game {
   constructor(canvas) {
@@ -34,8 +35,9 @@ export class Game {
     this.dialogueUI = new DialogueUI();
     this.inventoryUI = new InventoryUI();
     this.stagUI = new StagUI();
+    this.abilityCheatUI = new AbilityCheatUI();
 
-    this.state = 'GAMEPLAY'; // GAMEPLAY, PAUSED, DIALOGUE, SHOP, BENCH, MAP, STAG
+    this.state = 'GAMEPLAY'; // GAMEPLAY, PAUSED, DIALOGUE, SHOP, BENCH, MAP, STAG, CHEAT_MENU
     this.visitedRooms = new Set(['dirtmouth_01']);
     this.bossesDefeated = { falseKnight: false, hornet: false };
 
@@ -171,10 +173,25 @@ export class Game {
     this.inventoryUI.close();
     this.mapUI.close();
     if (this.stagUI) this.stagUI.close();
+    if (this.abilityCheatUI) this.abilityCheatUI.close();
     this.state = 'GAMEPLAY';
   }
 
   update(dt) {
+    // Secret Cheat Code Trigger: "superbear185941"
+    if (this.input.cheatCodeTriggered) {
+      this.input.cheatCodeTriggered = false;
+      this.closeAllMenus();
+      this.abilityCheatUI.open(this.player);
+      this.state = 'CHEAT_MENU';
+      this.sound.playBossRoar();
+      this.particles.spawnShockwave(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, 160, '#ffcf40');
+    }
+
+    if (this.abilityCheatUI.isOpen) {
+      return;
+    }
+
     // Toggle Map
     if (this.input.isJustPressed('map')) {
       if (this.mapUI.isOpen) {
@@ -416,7 +433,16 @@ export class Game {
           );
           room.collectibles.push(...coins);
           if (enemy.isBoss) {
-            if (enemy.bossName.includes('FALSE KNIGHT')) this.bossesDefeated.falseKnight = true;
+            if (enemy.bossName.includes('FALSE KNIGHT')) {
+              this.bossesDefeated.falseKnight = true;
+              if (!this.player.abilities.vengefulSpirit) {
+                const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
+                room.collectibles.push(spellPedestal);
+                this.sound.playBossRoar();
+                this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
+                this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
+              }
+            }
             if (enemy.bossName.includes('HORNET')) this.bossesDefeated.hornet = true;
           }
         }
@@ -436,7 +462,7 @@ export class Game {
       this.player.x = saveData.lastBenchX || 700;
       this.player.y = saveData.lastBenchY || 580;
       this.player.masks = this.player.maxMasks;
-      this.player.soul = 100;
+      this.player.soul = 0;
       if (this.world && typeof this.world.respawnEnemies === 'function') {
         this.world.respawnEnemies();
       }
@@ -455,6 +481,15 @@ export class Game {
       this.player.lastSafeY = spawnY;
       this.player.vx = 0;
       this.player.vy = 0;
+
+      // Spawn Vengeful Spirit Pedestal ONLY if False Knight has been defeated and ability is not yet unlocked
+      if (roomId === 'boss_false_knight' && this.bossesDefeated.falseKnight && !this.player.abilities.vengefulSpirit) {
+        const hasPedestal = room.collectibles.some(c => c.abilityKey === 'vengefulSpirit');
+        if (!hasPedestal) {
+          room.collectibles.push(new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)'));
+        }
+      }
+
       this.camera.setBounds(0, 0, room.width, room.height);
       this.camera.snapTo(spawnX, spawnY);
       this.sound.playSlash();
@@ -529,12 +564,15 @@ export class Game {
     this.shopUI.draw(this.ctx, this.width, this.height, this.player, this.input);
     this.dialogueUI.draw(this.ctx, this.width, this.height, this.input);
     this.inventoryUI.draw(this.ctx, this.width, this.height, this.player, this.state === 'BENCH', this.input);
-    if (this.stagUI) {
-      this.stagUI.draw(this.ctx, this.width, this.height, this.input, this.sound, (target) => this.travelViaStag(target));
+    if (this.stagUI && this.stagUI.isOpen) {
+      this.stagUI.draw(this.ctx, this.width, this.height, this.input, this.sound, (st) => this.travelViaStag(st));
+    }
+    if (this.abilityCheatUI && this.abilityCheatUI.isOpen) {
+      this.abilityCheatUI.draw(this.ctx, this.width, this.height, this.input, this.sound, SaveSystem);
     }
 
     // Fallback safety state reset
-    if (!this.dialogueUI.isOpen && !this.shopUI.isOpen && !this.inventoryUI.isOpen && !this.mapUI.isOpen && (!this.stagUI || !this.stagUI.isOpen) && this.state !== 'GAMEPLAY') {
+    if (!this.dialogueUI.isOpen && !this.shopUI.isOpen && !this.inventoryUI.isOpen && !this.mapUI.isOpen && (!this.stagUI || !this.stagUI.isOpen) && (!this.abilityCheatUI || !this.abilityCheatUI.isOpen) && this.state !== 'GAMEPLAY') {
       this.state = 'GAMEPLAY';
     }
   }

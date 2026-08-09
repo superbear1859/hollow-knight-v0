@@ -4,10 +4,21 @@ export class InputHandler {
     this.justPressedKeys = {};
     this.mouseClicked = false;
     this.mousePos = { x: 0, y: 0 };
+    this.secretBuffer = '';
+    this.secretTarget = 'superbear185941';
+    this.cheatCodeTriggered = false;
 
     window.addEventListener('keydown', (e) => {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code) || e.key === ' ') {
         e.preventDefault();
+      }
+
+      if (e.key && e.key.length === 1) {
+        this.secretBuffer = (this.secretBuffer + e.key.toLowerCase()).slice(-this.secretTarget.length);
+        if (this.secretBuffer === this.secretTarget) {
+          this.cheatCodeTriggered = true;
+          this.secretBuffer = '';
+        }
       }
 
       const keysToSet = [e.code, e.key, e.key?.toLowerCase(), e.key?.toUpperCase()].filter(Boolean);

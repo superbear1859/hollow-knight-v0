@@ -8,11 +8,11 @@ export class Player extends Entity {
     this.boxOffsetX = 5;
     this.boxOffsetY = 4;
 
-    // Stats
+    // Stats (9 Max Soul Vessel Capacity: 3 Soul per Heal / Spell)
     this.maxMasks = 5;
     this.masks = 5;
-    this.soul = 100;
-    this.maxSoul = 100;
+    this.soul = 0;
+    this.maxSoul = 9;
     this.geo = 0;
 
     // Movement Tuning
@@ -75,6 +75,11 @@ export class Player extends Entity {
 
   hasCharm(charmId) {
     return this.equippedCharms && this.equippedCharms.includes(charmId);
+  }
+
+  addSoul(amount = 1) {
+    const gained = this.hasCharm('SOUL_CATCHER') ? 2 : (amount || 1);
+    this.soul = Math.min(this.maxSoul, (this.soul || 0) + gained);
   }
 
   update(dt, input, soundManager, particles, tilemap, camera) {
@@ -263,9 +268,9 @@ export class Player extends Entity {
       return;
     }
 
-    const soulCost = this.hasCharm('SPELL_TWISTER') ? 24 : 33;
+    const soulCost = this.hasCharm('SPELL_TWISTER') ? 2 : 3;
     if (this.soul < soulCost) {
-      this.focusPrompt = 'NOT ENOUGH SOUL!';
+      this.focusPrompt = 'NEED 3 SOUL!';
       this.focusPromptTimer = 0.8;
       return;
     }
@@ -306,16 +311,17 @@ export class Player extends Entity {
       return;
     }
 
-    if (this.soul < 25) {
-      this.focusPrompt = 'NO SOUL! (Hit Enemies)';
+    const healCost = 3;
+    if (this.soul < healCost) {
+      this.focusPrompt = 'NEED 3 SOUL!';
       this.focusPromptTimer = 0.6;
       this.healCooldownTimer = 0.3;
       return;
     }
 
-    this.soul -= 25;
+    this.soul -= healCost;
     this.masks = Math.min(this.maxMasks, this.masks + 1);
-    this.healCooldownTimer = 0.25; // Instant 250ms heal speed
+    this.healCooldownTimer = 0.6; // 600ms focus heal hold cooldown
 
     if (soundManager && soundManager.playHealComplete) soundManager.playHealComplete();
     if (particles && particles.spawnShockwave) {

@@ -175,7 +175,7 @@ export class World {
     dirtmouth.fillBox(1, 20, 88, 3, DIRT_STONE);
 
     dirtmouth.benches.push(new Bench(700, 616, 'dirtmouth_01'));
-    dirtmouth.stagStations.push(new StagStation(600, 600, 'dirtmouth', 'Dirtmouth Town Station', 'dirtmouth_01'));
+    dirtmouth.stagStations.push(new StagStation(600, 612, 'dirtmouth', 'Dirtmouth Town Station', 'dirtmouth_01'));
 
     dirtmouth.npcs.push(
       { x: 550, y: 600, name: 'Elderbug', dialogue: "Welcome to Dirtmouth, traveler. Passages lead into the howling cliffs and caverns..." },
@@ -225,7 +225,7 @@ export class World {
     crossroads2.fillBox(1, 31, 108, 3, STONE);
 
     crossroads2.benches.push(new Bench(1600, 968, 'crossroads_02'));
-    crossroads2.stagStations.push(new StagStation(1500, 944, 'crossroads', 'Crossroads Basin Station', 'crossroads_02'));
+    crossroads2.stagStations.push(new StagStation(1500, 964, 'crossroads', 'Crossroads Basin Station', 'crossroads_02'));
 
     crossroads2.addEnemy(new Crawlid(500, 930));
     crossroads2.addEnemy(new HuskSentinel(1200, 920));
@@ -259,7 +259,6 @@ export class World {
     falseKnightArena.addEnemy(new Crawlid(300, 510));
     falseKnightArena.addEnemy(new Crawlid(1600, 510));
 
-    falseKnightArena.collectibles.push(new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)'));
 
     falseKnightArena.addDoor({
       x: 0, y: 520, width: 70, height: 90,
@@ -302,7 +301,7 @@ export class World {
     greenpath1.fillBox(41, 31, 48, 3, ACID);
     greenpath1.fillBox(89, 31, 40, 3, MOSS_STONE);
 
-    greenpath1.stagStations.push(new StagStation(3800, 944, 'greenpath', 'Greenpath Canopy Station', 'greenpath_01'));
+    greenpath1.stagStations.push(new StagStation(3800, 964, 'greenpath', 'Greenpath Canopy Station', 'greenpath_01'));
     greenpath1.addEnemy(new Crawlid(600, 930));
 
     greenpath1.addDoor({
@@ -384,7 +383,7 @@ export class World {
     cityOfTears.fillBox(1, 31, 133, 3, CITY_STONE);
 
     cityOfTears.benches.push(new Bench(2200, 968, 'city_of_tears'));
-    cityOfTears.stagStations.push(new StagStation(2100, 944, 'city_of_tears', 'City of Tears Central Station', 'city_of_tears'));
+    cityOfTears.stagStations.push(new StagStation(2100, 964, 'city_of_tears', 'City of Tears Central Station', 'city_of_tears'));
 
     cityOfTears.addEnemy(new HuskSentinel(700, 920));
 
@@ -406,7 +405,7 @@ export class World {
     deepnest.fillBox(1, 31, 118, 3, DEEP_STONE);
 
     deepnest.collectibles.push(new AbilityUnlock(1200, 936, 'shadowDash', 'Shade Cloak (Shadow Dash)'));
-    deepnest.stagStations.push(new StagStation(600, 944, 'deepnest', 'Deepnest Distant Village Station', 'deepnest'));
+    deepnest.stagStations.push(new StagStation(600, 964, 'deepnest', 'Deepnest Distant Village Station', 'deepnest'));
 
     deepnest.voidGates.push(new VoidGate(1800, 800, 32, 192));
 

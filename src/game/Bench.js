@@ -16,7 +16,6 @@ export class Bench {
 
   rest(player, soundManager, particles, saveSystem, game) {
     player.masks = player.maxMasks;
-    player.soul = player.maxSoul;
 
     soundManager.playBenchBell();
     particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 80, '#b0e2ff');
