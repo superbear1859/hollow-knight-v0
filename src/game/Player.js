@@ -246,7 +246,7 @@ export class Player extends Entity {
   }
 
   takeDamage(damage, sourceX, soundManager, particles, camera) {
-    if (this.invulnerable || this.isDashing) return;
+    if (this.invulnerable || (this.isDashing && this.isShadowDash)) return;
 
     this.masks = Math.max(0, this.masks - damage);
     this.invulnerable = true;
