@@ -35,6 +35,10 @@ export class Player extends Entity {
     this.isDashing = false;
     this.isShadowDash = false;
 
+    // Desolate Dive Spell
+    this.isDiving = false;
+    this.didDiveImpact = false;
+
     // Wall Jump
     this.isWallSliding = false;
     this.wallJumpTimer = 0;
@@ -64,7 +68,8 @@ export class Player extends Entity {
       dash: false,
       shadowDash: false,
       wallJump: false,
-      vengefulSpirit: false
+      vengefulSpirit: false,
+      desolateDive: false
     };
 
     // Charms & Modifiers
@@ -118,6 +123,23 @@ export class Player extends Entity {
           this.spellProjectiles.splice(i, 1);
         }
       }
+    }
+
+    // Handle Desolate Dive Downward Slam State
+    if (this.isDiving) {
+      this.vy = 880;
+      this.vx = 0;
+      if (particles && particles.spawnHitSparks) {
+        particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height, 2, '#88d6ff');
+      }
+      Physics.checkTileCollision(this, tilemap, dt);
+      if (this.grounded) {
+        this.isDiving = false;
+        this.didDiveImpact = true;
+        this.invulnerable = true;
+        this.invulnerableTimer = 0.8;
+      }
+      return;
     }
 
     // Handle Dash State
@@ -234,9 +256,9 @@ export class Player extends Entity {
       soundManager.playDash();
     }
 
-    // Vengeful Spirit Spell Trigger
+    // Spell Cast Trigger (Vengeful Spirit vs Desolate Dive)
     if (input.isJustPressed('spell')) {
-      this.castSpell(soundManager, particles, tilemap);
+      this.castSpell(soundManager, particles, tilemap, input);
     }
 
     // Nail Attack
@@ -252,7 +274,7 @@ export class Player extends Entity {
   }
 
   takeDamage(damage, sourceX, soundManager, particles, camera) {
-    if (this.invulnerable || (this.isDashing && this.isShadowDash)) return;
+    if (this.invulnerable || (this.isDashing && this.isShadowDash) || this.isDiving) return;
 
     this.masks = Math.max(0, this.masks - damage);
     this.invulnerable = true;
@@ -267,7 +289,39 @@ export class Player extends Entity {
     if (camera && camera.shake) camera.shake(6, 0.25);
   }
 
-  castSpell(soundManager, particles, tilemap) {
+  castSpell(soundManager, particles, tilemap, input) {
+    const isDownPressed = input && (input.isDown('down') || input.isDown('s') || input.isDown('ArrowDown') || input.isDown('KeyS'));
+
+    if (isDownPressed) {
+      // Trigger Desolate Dive Spell
+      if (!this.abilities.desolateDive) {
+        this.focusPrompt = 'DESOLATE DIVE LOCKED';
+        this.focusPromptTimer = 0.8;
+        return;
+      }
+
+      const soulCost = this.hasCharm('SPELL_TWISTER') ? 2 : 3;
+      if (this.soul < soulCost) {
+        this.focusPrompt = 'NEED 3 SOUL!';
+        this.focusPromptTimer = 0.8;
+        return;
+      }
+
+      this.soul -= soulCost;
+      this.isDiving = true;
+      this.vy = 880;
+      this.vx = 0;
+      this.invulnerable = true;
+      this.invulnerableTimer = 1.0;
+
+      if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+      if (particles && particles.spawnShockwave) {
+        particles.spawnShockwave(this.x + this.width / 2, this.y + 10, 80, '#ffffff');
+      }
+      return;
+    }
+
+    // Default Vengeful Spirit Spell
     if (!this.abilities.vengefulSpirit) {
       this.focusPrompt = 'VENGEFUL SPIRIT LOCKED';
       this.focusPromptTimer = 0.8;
@@ -395,14 +449,25 @@ export class Player extends Entity {
       }
     }
 
+    // Desolate Dive Radiant Glowing Energy Aura
+    if (this.isDiving) {
+      ctx.fillStyle = 'rgba(180, 235, 255, 0.6)';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(screenX + 11, screenY + 17, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
     // Focus Healing Status Prompt Banner
     if (this.focusPromptTimer > 0) {
       const alpha = Math.min(1, this.focusPromptTimer * 2);
       ctx.fillStyle = `rgba(10, 16, 28, ${alpha * 0.85})`;
       ctx.strokeStyle = '#88d6ff';
       ctx.lineWidth = 1.5;
-      ctx.fillRect(screenX - 40, screenY - 42, 110, 22);
-      ctx.strokeRect(screenX - 40, screenY - 42, 110, 22);
+      ctx.fillRect(screenX - 50, screenY - 42, 130, 22);
+      ctx.strokeRect(screenX - 50, screenY - 42, 130, 22);
 
       ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
       ctx.font = '700 11px Cinzel, serif';

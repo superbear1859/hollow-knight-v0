@@ -224,7 +224,9 @@ export class World {
     crossroads2.fillFrame(STONE);
     crossroads2.fillBox(1, 31, 108, 3, STONE);
 
-    crossroads2.benches.push(new Bench(1600, 968, 'crossroads_02'));
+    crossroads2.benches.push(new Bench(400, 936, 'crossroads_02'));
+    crossroads2.collectibles.push(new AbilityUnlock(1800, 936, 'desolateDive', 'Desolate Dive (Spell)'));
+    crossroads2.addEnemy(new HuskSentinel(1200, 890));
     crossroads2.stagStations.push(new StagStation(1500, 964, 'crossroads', 'Crossroads Basin Station', 'crossroads_02'));
 
     crossroads2.addEnemy(new Crawlid(500, 930));

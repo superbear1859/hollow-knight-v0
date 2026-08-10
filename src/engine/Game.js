@@ -286,6 +286,46 @@ export class Game {
     this.player.update(dt, this.input, this.sound, this.particles, room, this.camera);
     this.camera.follow(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, dt);
 
+    // Desolate Dive Impact Shockwave & AoE Destruction
+    if (this.player.didDiveImpact) {
+      this.player.didDiveImpact = false;
+      const impactX = this.player.x + this.player.width / 2;
+      const impactY = this.player.y + this.player.height;
+
+      this.camera.shake(14, 0.45);
+      this.sound.playBossRoar();
+      this.particles.spawnShockwave(impactX, impactY, 160, '#ffffff');
+      this.particles.spawnHitSparks(impactX, impactY, 24, '#88d6ff');
+
+      // AoE Damage to Nearby Enemies
+      if (room.enemies) {
+        for (const enemy of room.enemies) {
+          if (!enemy.active || enemy.isDead) continue;
+          const edx = (enemy.x + enemy.width / 2) - impactX;
+          const edy = (enemy.y + enemy.height / 2) - impactY;
+          if (Math.hypot(edx, edy) <= 150) {
+            const defeated = enemy.takeDamage(25, impactX, this.sound, this.particles, this.player);
+            if (defeated) {
+              const coins = GeoCoin.createMultiDenominations(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.geoReward);
+              room.collectibles.push(...coins);
+            }
+          }
+        }
+      }
+
+      // AoE Destruction of Nearby Breakable Walls & Floors
+      if (room.walls) {
+        for (const wall of room.walls) {
+          if (!wall.active || wall.isDestroyed) continue;
+          const wdx = (wall.x + wall.width / 2) - impactX;
+          const wdy = (wall.y + wall.height / 2) - impactY;
+          if (Math.hypot(wdx, wdy) <= 150) {
+            wall.takeDamage(5, this.sound, this.particles, room);
+          }
+        }
+      }
+    }
+
     // Update Interactive Entities (Platforms, Walls, Void Gates)
     if (room.platforms) {
       for (const platform of room.platforms) {
