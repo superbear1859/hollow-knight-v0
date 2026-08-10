@@ -24,12 +24,14 @@ export class Player extends Entity {
     this.jumpBufferTimer = 0;
     this.coyoteTimer = 0;
 
-    // Dash
+    // Dash (Mothwing Cloak & 1.0s Shade Cloak Cooldown)
     this.dashSpeed = 520;
     this.dashDuration = 0.22;
     this.dashTimer = 0;
     this.dashCooldown = 0.6;
     this.dashCooldownTimer = 0;
+    this.shadowDashCooldown = 1.0;
+    this.shadowDashCooldownTimer = 0;
     this.isDashing = false;
     this.isShadowDash = false;
 
@@ -96,6 +98,7 @@ export class Player extends Entity {
     }
 
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
+    if (this.shadowDashCooldownTimer > 0) this.shadowDashCooldownTimer -= dt;
     if (this.wallJumpTimer > 0) this.wallJumpTimer -= dt;
 
     if (this.attackTimer > 0) {
@@ -213,15 +216,18 @@ export class Player extends Entity {
       this.vy = -150;
     }
 
-    // Dash Trigger
+    // Dash Trigger (Standard Dash Cooldown vs 1.0s Shade Cloak Cooldown)
     const canDash = this.abilities.dash && this.dashCooldownTimer <= 0;
     if (input.isJustPressed('dash') && canDash) {
       this.isDashing = true;
       this.dashTimer = this.dashDuration;
       const cooldown = this.hasCharm('DASHMASTER') ? this.dashCooldown * 0.5 : this.dashCooldown;
       this.dashCooldownTimer = cooldown;
-      this.isShadowDash = this.abilities.shadowDash;
+
+      const canShadowDash = this.abilities.shadowDash && this.shadowDashCooldownTimer <= 0;
+      this.isShadowDash = canShadowDash;
       if (this.isShadowDash) {
+        this.shadowDashCooldownTimer = this.shadowDashCooldown; // 1.0 second Shade Cloak cooldown
         this.invulnerable = true;
         this.invulnerableTimer = this.dashDuration;
       }
@@ -307,7 +313,7 @@ export class Player extends Entity {
     if (this.masks >= this.maxMasks) {
       this.focusPrompt = 'FULL HEALTH (5/5)';
       this.focusPromptTimer = 0.6;
-      this.healCooldownTimer = 0.3;
+      this.healCooldownTimer = 0.4;
       return;
     }
 
@@ -315,7 +321,7 @@ export class Player extends Entity {
     if (this.soul < healCost) {
       this.focusPrompt = 'NEED 3 SOUL!';
       this.focusPromptTimer = 0.6;
-      this.healCooldownTimer = 0.3;
+      this.healCooldownTimer = 0.4;
       return;
     }
 
