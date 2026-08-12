@@ -79,6 +79,9 @@ export class Player extends Entity {
     // Charms & Modifiers
     this.equippedCharms = [];
 
+    // Animation Timer & Character Poses
+    this.animTimer = 0;
+
     // Hazard Safe Respawn Position
     this.lastSafeX = x;
     this.lastSafeY = y;
@@ -95,6 +98,7 @@ export class Player extends Entity {
 
   update(dt, input, soundManager, particles, tilemap, camera) {
     super.update(dt);
+    this.animTimer += dt;
 
     if (this.focusPromptTimer > 0) this.focusPromptTimer -= dt;
     if (this.healCooldownTimer > 0) this.healCooldownTimer -= dt;
@@ -632,49 +636,146 @@ export class Player extends Entity {
       ctx.globalAlpha = 0.5;
     }
 
-    // 1. Cloak (Dark Grey/Blue Flowing Vessel Cloak)
+    // ----------------------------------------------------
+    // PROCEDURAL SKELETAL & CLOAK ANIMATION SYSTEM
+    // ----------------------------------------------------
+    const isMoving = this.grounded && Math.abs(this.vx) > 10;
+    const isAirborne = !this.grounded && !this.isWallSliding;
+
+    // 1. Calculate Body Offsets & Rotations per State
+    let bodyBobY = 0;
+    let bodyTilt = 0;
+    let cloakWave = Math.sin(this.animTimer * 12) * 2;
+    let leftLegOffset = 0;
+    let rightLegOffset = 0;
+
+    if (isMoving) {
+      bodyBobY = Math.abs(Math.sin(this.animTimer * 18)) * 2.5;
+      cloakWave = Math.sin(this.animTimer * 18) * 5;
+      leftLegOffset = Math.sin(this.animTimer * 18) * 5;
+      rightLegOffset = -Math.sin(this.animTimer * 18) * 5;
+      bodyTilt = this.facing * 0.08;
+    } else if (this.isDashing) {
+      bodyTilt = this.facing * 0.38; // Aerodynamic dash forward tilt
+      cloakWave = Math.sin(this.animTimer * 30) * 7;
+    } else if (this.isWallSliding) {
+      bodyTilt = this.onLeftWall ? -0.16 : 0.16; // Lean against wall
+    } else if (isAirborne) {
+      if (this.vy < 0) {
+        bodyBobY = -2; // Jump upward lift
+        cloakWave = 6; // Cloak flares down
+      } else {
+        bodyBobY = 2; // Fall drop
+        cloakWave = -4; // Cloak flares up
+      }
+    }
+
+    ctx.save();
+    ctx.translate(screenX + 11, screenY + 17 + bodyBobY);
+    if (bodyTilt !== 0) ctx.rotate(bodyTilt);
+
+    // 2. Animated Knight Feet & Leg Strides (Under Cloak)
+    ctx.fillStyle = '#0a0d14';
+    if (isMoving) {
+      ctx.fillRect(-6 + leftLegOffset, 12, 4, 6);
+      ctx.fillRect(2 + rightLegOffset, 12, 4, 6);
+    } else if (isAirborne) {
+      ctx.fillRect(-5, 10, 4, 5);
+      ctx.fillRect(1, 10, 4, 5);
+    } else {
+      ctx.fillRect(-6, 12, 4, 5);
+      ctx.fillRect(2, 12, 4, 5);
+    }
+
+    // 3. Flowing Vessel Cloak (Animated Bezier Wave)
     ctx.fillStyle = '#232b38';
     ctx.beginPath();
-    ctx.ellipse(screenX + 11, screenY + 22, 10, 13, 0, 0, Math.PI * 2);
+    ctx.moveTo(-11, 2);
+    ctx.quadraticCurveTo(-15 - cloakWave * 0.5, 12, -10 + leftLegOffset * 0.5, 16);
+    ctx.lineTo(10 + rightLegOffset * 0.5, 16);
+    ctx.quadraticCurveTo(15 + cloakWave * 0.5, 12, 11, 2);
+    ctx.closePath();
     ctx.fill();
 
-    // 2. White Mask Head
+    // Inner Vessel Body
+    ctx.fillStyle = '#111622';
+    ctx.beginPath();
+    ctx.ellipse(0, 5, 8, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. White Mask Head
     ctx.fillStyle = '#f5f7fa';
     ctx.beginPath();
-    ctx.ellipse(screenX + 11, screenY + 10, 8, 9, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -7, 8, 9, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3. Black Eye Sockets
+    // 5. Black Eye Sockets (Follows Facing Direction)
     ctx.fillStyle = '#05060a';
     ctx.beginPath();
-    const eyeOffsetX = this.facing > 0 ? 2 : -2;
-    ctx.ellipse(screenX + 8 + eyeOffsetX, screenY + 10, 2, 3.5, 0.1, 0, Math.PI * 2);
-    ctx.ellipse(screenX + 14 + eyeOffsetX, screenY + 10, 2, 3.5, -0.1, 0, Math.PI * 2);
+    const eyeX = this.facing > 0 ? 2 : -2;
+    ctx.ellipse(-3 + eyeX, -7, 2, 3.5, 0.1, 0, Math.PI * 2);
+    ctx.ellipse(3 + eyeX, -7, 2, 3.5, -0.1, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Iconic Curved White Horns (Proper 4-argument quadraticCurveTo)
+    // 6. Iconic Curved White Horns
     ctx.fillStyle = '#f5f7fa';
     ctx.beginPath();
-    ctx.moveTo(screenX + 5, screenY + 6);
-    ctx.quadraticCurveTo(screenX + 1, screenY - 6, screenX + 8, screenY + 2);
-    ctx.lineTo(screenX + 5, screenY + 6);
+    ctx.moveTo(-6, -11);
+    ctx.quadraticCurveTo(-10, -23, -3, -15);
+    ctx.lineTo(-6, -11);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(screenX + 17, screenY + 6);
-    ctx.quadraticCurveTo(screenX + 21, screenY - 6, screenX + 14, screenY + 2);
-    ctx.lineTo(screenX + 17, screenY + 6);
+    ctx.moveTo(6, -11);
+    ctx.quadraticCurveTo(10, -23, 3, -15);
+    ctx.lineTo(6, -11);
     ctx.fill();
 
-    // 5. Razor-sharp Pure Nail
-    ctx.strokeStyle = '#c0d0e4';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    const nailX = this.facing > 0 ? screenX + 18 : screenX + 4;
-    ctx.moveTo(nailX, screenY + 16);
-    ctx.lineTo(nailX + this.facing * 12, screenY + 24);
-    ctx.stroke();
+    // 7. Animated Pure Nail Swing & Slashing Blade Arc
+    if (this.isAttacking) {
+      const progress = 1 - (this.attackTimer / this.attackCooldown); // 0 to 1
+      const slashAngle = (progress - 0.5) * Math.PI * 1.2; // Slashing arc rotation
 
+      ctx.save();
+      if (this.attackDirection === 'up') {
+        ctx.translate(0, -15);
+        ctx.rotate(-Math.PI / 2 + slashAngle * 0.5);
+      } else if (this.attackDirection === 'down') {
+        ctx.translate(0, 15);
+        ctx.rotate(Math.PI / 2 + slashAngle * 0.5);
+      } else {
+        ctx.translate(this.facing * 10, 0);
+        ctx.rotate(this.facing > 0 ? slashAngle : -slashAngle);
+      }
+
+      // Animated Slashing Blade Crescent Arc
+      ctx.strokeStyle = 'rgba(230, 242, 255, 0.95)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, -Math.PI * 0.4, Math.PI * 0.4);
+      ctx.stroke();
+
+      // Pure Nail Weapon
+      ctx.strokeStyle = '#c0d0e4';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(this.facing * 26, 0);
+      ctx.stroke();
+
+      ctx.restore();
+    } else {
+      // Sheathed / Rest Pure Nail
+      ctx.strokeStyle = '#c0d0e4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const nX = this.facing > 0 ? 6 : -6;
+      ctx.moveTo(nX, 0);
+      ctx.lineTo(nX + this.facing * 10, 8);
+      ctx.stroke();
+    }
+
+    ctx.restore();
     ctx.restore();
   }
 }

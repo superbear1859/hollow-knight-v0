@@ -21,6 +21,7 @@ export class FalseKnight extends Enemy {
     super.update(dt);
     if (this.isDead) return;
 
+    this.animTimer = (this.animTimer || 0) + dt;
     this.stateTimer -= dt;
 
     const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
@@ -75,11 +76,22 @@ export class FalseKnight extends Enemy {
     ctx.translate(screenX + this.width / 2, screenY + this.height / 2);
     if (this.facing < 0) ctx.scale(-1, 1);
 
+    // Animated Stomping Armor Feet
+    const t = this.animTimer || 0;
+    const isMoving = this.state === 'MOVE' || this.state === 'RAGE';
+    const stompLeft = isMoving ? Math.sin(t * 10) * 8 : 0;
+    const stompRight = isMoving ? -Math.sin(t * 10) * 8 : 0;
+    const breathY = Math.sin(t * 4) * 2;
+
+    ctx.fillStyle = '#10141e';
+    ctx.fillRect(-24 + stompLeft, 26, 14, 16);
+    ctx.fillRect(10 + stompRight, 26, 14, 16);
+
     ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : (this.state === 'RAGE' ? '#4a151b' : '#181d28');
 
-    // Massive Dome Armor Body
+    // Massive Dome Armor Body (Breathing animation)
     ctx.beginPath();
-    ctx.ellipse(0, -10, 36, 42, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -10 + breathY, 36, 42, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Steel Horns & Crown
