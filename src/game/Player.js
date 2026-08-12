@@ -280,7 +280,7 @@ export class Player extends Entity {
       if (this.isShadowDash) {
         this.shadowDashCooldownTimer = this.shadowDashCooldown; // 1.0 second Shade Cloak cooldown
         this.invulnerable = true;
-        this.invulnerableTimer = this.dashDuration;
+        this.invulnerableTimer = this.dashDuration + 0.15; // 0.37s total invulnerability window
       }
       soundManager.playDash();
     }
@@ -302,12 +302,12 @@ export class Player extends Entity {
     }
   }
 
-  takeDamage(damage, sourceX, soundManager, particles, camera) {
+  takeDamage(damage = 1, sourceX, soundManager, particles, camera) {
     if (this.invulnerable || (this.isDashing && this.isShadowDash) || this.isDiving) return;
 
-    this.masks = Math.max(0, this.masks - damage);
+    this.masks = Math.max(0, this.masks - 1);
     this.invulnerable = true;
-    this.invulnerableTimer = 1.2;
+    this.invulnerableTimer = 1.3;
 
     const knockDir = sourceX ? (this.x < sourceX ? -1 : 1) : -this.facing;
     this.vx = knockDir * 240;
@@ -408,13 +408,15 @@ export class Player extends Entity {
   }
 
   triggerHazardRespawn(soundManager, particles, camera) {
+    if (this.invulnerable || (this.isDashing && this.isShadowDash) || this.isDiving) return;
+
     this.masks = Math.max(0, this.masks - 1);
     this.x = this.lastSafeX;
     this.y = this.lastSafeY;
     this.vx = 0;
     this.vy = 0;
     this.invulnerable = true;
-    this.invulnerableTimer = 1.2;
+    this.invulnerableTimer = 1.4;
 
     if (soundManager && soundManager.playHurt) soundManager.playHurt();
     if (particles && particles.spawnHitSparks) particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 12, '#ff4444');
