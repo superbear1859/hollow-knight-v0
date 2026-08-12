@@ -427,11 +427,14 @@ export class Game {
     this.particles.update(dt);
     this.particles.spawnAmbientSpores(this.camera.bounds, 1);
 
-    // Check Room Door Transitions
-    for (const door of room.doors) {
-      if (Physics.rectIntersect(this.player.getBounds(), door)) {
-        this.transitionRoom(door.targetRoomId, door.targetX, door.targetY);
-        break;
+    // Check Room Door Transitions (Blocked during active boss fight!)
+    const activeBoss = room.enemies ? room.enemies.find(e => e.active && e.isBoss && !e.isDead) : null;
+    if (!activeBoss && room.doors) {
+      for (const door of room.doors) {
+        if (Physics.rectIntersect(this.player.getBounds(), door)) {
+          this.transitionRoom(door.targetRoomId, door.targetX, door.targetY);
+          break;
+        }
       }
     }
 
@@ -622,6 +625,42 @@ export class Game {
       if (enemy.active) {
         enemy.draw(this.ctx, this.camera);
         if (enemy.isBoss && !enemy.isDead) currentBoss = enemy;
+      }
+    }
+
+    // Draw Locked Iron Portcullis Gates over Exits during Boss Fight
+    if (currentBoss && room.doors) {
+      for (const door of room.doors) {
+        const view = this.camera.getView();
+        const screenX = Math.round(door.x - view.x);
+        const screenY = Math.round(door.y - view.y);
+
+        this.ctx.save();
+        // Heavy Iron Gate Bars Background
+        this.ctx.fillStyle = 'rgba(12, 16, 24, 0.92)';
+        this.ctx.fillRect(screenX, screenY, door.width, door.height);
+
+        this.ctx.strokeStyle = '#e63946';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(screenX, screenY, door.width, door.height);
+
+        // Vertical Grate Bars
+        this.ctx.strokeStyle = '#4a5568';
+        this.ctx.lineWidth = 2.5;
+        for (let bx = screenX + 8; bx < screenX + door.width; bx += 14) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(bx, screenY);
+          this.ctx.lineTo(bx, screenY + door.height);
+          this.ctx.stroke();
+        }
+
+        // Glowing Red Lock Rune Symbol
+        this.ctx.fillStyle = '#ff4444';
+        this.ctx.font = '700 12px Cinzel, serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('🔒 LOCKED', screenX + door.width / 2, screenY + door.height / 2 + 4);
+
+        this.ctx.restore();
       }
     }
 

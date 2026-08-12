@@ -66,6 +66,20 @@ export class Physics {
       if (tilemap.voidGates) checkEntities(tilemap.voidGates);
       if (tilemap.entities) checkEntities(tilemap.entities);
 
+      // Block doors/passages as solid physical barriers during active boss fight
+      if (tilemap.doors && tilemap.enemies && tilemap.enemies.some(e => e.active && e.isBoss && !e.isDead)) {
+        for (const door of tilemap.doors) {
+          if (this.rectIntersect(bounds, door)) {
+            rects.push({
+              x: door.x,
+              y: door.y,
+              width: door.width,
+              height: door.height
+            });
+          }
+        }
+      }
+
       return rects;
     };
 
