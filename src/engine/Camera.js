@@ -19,9 +19,11 @@ export class Camera {
     this.bounds = { minX, minY, maxX, maxY };
   }
 
-  shake(intensity = 6, duration = 0.25) {
-    this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
-    this.shakeDuration = Math.max(this.shakeDuration, duration);
+  shake(intensity = 3, duration = 0.15) {
+    const clampedIntensity = Math.min(4, intensity * 0.4);
+    const clampedDuration = Math.min(0.18, duration * 0.5);
+    this.shakeIntensity = Math.max(this.shakeIntensity, clampedIntensity);
+    this.shakeDuration = Math.max(this.shakeDuration, clampedDuration);
   }
 
   snapTo(targetX, targetY) {
@@ -73,12 +75,14 @@ export class Camera {
     this.x += (this.targetX - this.x) * this.lerpSpeed;
     this.y += (this.targetY - this.y) * this.lerpSpeed;
 
-    // Handle screen shake decay
+    // Smooth exponentially decaying screen shake
     if (this.shakeDuration > 0) {
       this.shakeDuration -= dt;
-      this.shakeOffsetX = (Math.random() - 0.5) * 2 * this.shakeIntensity;
-      this.shakeOffsetY = (Math.random() - 0.5) * 2 * this.shakeIntensity;
-      if (this.shakeDuration <= 0) {
+      this.shakeIntensity *= 0.85; // Damping decay
+      this.shakeOffsetX = (Math.random() - 0.5) * 1.2 * this.shakeIntensity;
+      this.shakeOffsetY = (Math.random() - 0.5) * 1.2 * this.shakeIntensity;
+      if (this.shakeDuration <= 0 || this.shakeIntensity < 0.2) {
+        this.shakeDuration = 0;
         this.shakeIntensity = 0;
         this.shakeOffsetX = 0;
         this.shakeOffsetY = 0;

@@ -292,7 +292,7 @@ export class Game {
       const impactX = this.player.x + this.player.width / 2;
       const impactY = this.player.y + this.player.height;
 
-      this.camera.shake(14, 0.45);
+      this.camera.shake(4, 0.18);
       this.sound.playBossRoar();
       this.particles.spawnShockwave(impactX, impactY, 160, '#ffffff');
       this.particles.spawnHitSparks(impactX, impactY, 24, '#88d6ff');
@@ -332,7 +332,7 @@ export class Game {
       const impactX = this.player.x + this.player.width / 2;
       const impactY = this.player.y;
 
-      this.camera.shake(12, 0.35);
+      this.camera.shake(3, 0.15);
       this.sound.playBossRoar();
       this.particles.spawnShockwave(impactX, impactY - 40, 140, '#ffffff');
       this.particles.spawnHitSparks(impactX, impactY - 60, 24, '#88d6ff');

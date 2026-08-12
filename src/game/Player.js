@@ -319,7 +319,7 @@ export class Player extends Entity {
 
     if (soundManager && soundManager.playHurt) soundManager.playHurt();
     if (particles && particles.spawnHitSparks) particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 12, '#ff4444');
-    if (camera && camera.shake) camera.shake(6, 0.25);
+    if (camera && camera.shake) camera.shake(2, 0.12);
   }
 
   castSpell(soundManager, particles, tilemap, input) {
@@ -424,7 +424,7 @@ export class Player extends Entity {
 
     if (soundManager && soundManager.playHurt) soundManager.playHurt();
     if (particles && particles.spawnHitSparks) particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 12, '#ff4444');
-    if (camera && camera.shake) camera.shake(8, 0.3);
+    if (camera && camera.shake) camera.shake(3, 0.15);
   }
 
   performHeal(soundManager, particles) {

@@ -60,7 +60,7 @@ export class FalseKnight extends Enemy {
 
   performSlam(player, soundManager, particles, camera) {
     soundManager.playBossRoar();
-    camera.shake(12, 0.4);
+    camera.shake(4, 0.18);
 
     // Shockwave travelling along ground
     particles.spawnShockwave(this.x + (this.facing > 0 ? this.width + 30 : -30), this.y + this.height, 90, '#ff9944');
