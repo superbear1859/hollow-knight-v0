@@ -522,6 +522,9 @@ export class Game {
 
       if (!enemy.active) continue;
 
+      // Update Active Enemy AI & Physics
+      enemy.update(dt, this.player, room, this.sound, this.particles, this.camera);
+
       // Player Attack vs Enemy Hitbox
       if (this.player.isAttacking && this.player.attackHitbox && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
         const isDownAttack = this.player.attackDirection === 'down';
