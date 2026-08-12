@@ -13,7 +13,8 @@ export class SaveSystem {
         shadowDash: false,
         wallJump: false,
         vengefulSpirit: false,
-        desolateDive: false
+        desolateDive: false,
+        howlingWraiths: false
       },
       charmsOwned: ['WAYWARD_COMPASS'],
       charmsEquipped: ['WAYWARD_COMPASS'],

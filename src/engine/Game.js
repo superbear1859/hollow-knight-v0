@@ -326,6 +326,37 @@ export class Game {
       }
     }
 
+    // Howling Wraiths Upward Eruption & AoE Damage
+    if (this.player.didShriekImpact) {
+      this.player.didShriekImpact = false;
+      const impactX = this.player.x + this.player.width / 2;
+      const impactY = this.player.y;
+
+      this.camera.shake(12, 0.35);
+      this.sound.playBossRoar();
+      this.particles.spawnShockwave(impactX, impactY - 40, 140, '#ffffff');
+      this.particles.spawnHitSparks(impactX, impactY - 60, 24, '#88d6ff');
+
+      // Upward AoE Damage to Nearby & Flying Enemies
+      if (room.enemies) {
+        for (const enemy of room.enemies) {
+          if (!enemy.active || enemy.isDead) continue;
+          const enemyCenterX = enemy.x + enemy.width / 2;
+          const enemyCenterY = enemy.y + enemy.height / 2;
+          const isHorizNear = Math.abs(enemyCenterX - impactX) <= 90;
+          const isVertAbove = enemyCenterY <= impactY + 40 && enemyCenterY >= impactY - 200;
+
+          if (isHorizNear && isVertAbove) {
+            const defeated = enemy.takeDamage(30, impactX, this.sound, this.particles, this.player);
+            if (defeated) {
+              const coins = GeoCoin.createMultiDenominations(enemyCenterX, enemyCenterY, enemy.geoReward);
+              room.collectibles.push(...coins);
+            }
+          }
+        }
+      }
+    }
+
     // Update Interactive Entities (Platforms, Walls, Void Gates)
     if (room.platforms) {
       for (const platform of room.platforms) {

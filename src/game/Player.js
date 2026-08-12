@@ -35,9 +35,12 @@ export class Player extends Entity {
     this.isDashing = false;
     this.isShadowDash = false;
 
-    // Desolate Dive Spell
+    // Desolate Dive & Howling Wraiths Spells
     this.isDiving = false;
     this.didDiveImpact = false;
+    this.isShrieking = false;
+    this.shriekTimer = 0;
+    this.didShriekImpact = false;
 
     // Wall Jump
     this.isWallSliding = false;
@@ -69,7 +72,8 @@ export class Player extends Entity {
       shadowDash: false,
       wallJump: false,
       vengefulSpirit: false,
-      desolateDive: false
+      desolateDive: false,
+      howlingWraiths: false
     };
 
     // Charms & Modifiers
@@ -105,6 +109,13 @@ export class Player extends Entity {
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
     if (this.shadowDashCooldownTimer > 0) this.shadowDashCooldownTimer -= dt;
     if (this.wallJumpTimer > 0) this.wallJumpTimer -= dt;
+
+    if (this.shriekTimer > 0) {
+      this.shriekTimer -= dt;
+      if (this.shriekTimer <= 0) {
+        this.isShrieking = false;
+      }
+    }
 
     if (this.attackTimer > 0) {
       this.attackTimer -= dt;
@@ -274,7 +285,7 @@ export class Player extends Entity {
       soundManager.playDash();
     }
 
-    // Spell Cast Trigger (Vengeful Spirit vs Desolate Dive)
+    // Spell Cast Trigger (Vengeful Spirit vs Desolate Dive vs Howling Wraiths)
     if (input.isJustPressed('spell')) {
       this.castSpell(soundManager, particles, tilemap, input);
     }
@@ -309,6 +320,35 @@ export class Player extends Entity {
 
   castSpell(soundManager, particles, tilemap, input) {
     const isDownPressed = input && (input.isDown('down') || input.isDown('s') || input.isDown('ArrowDown') || input.isDown('KeyS'));
+    const isUpPressed = input && (input.isDown('up') || input.isDown('w') || input.isDown('ArrowUp') || input.isDown('KeyW'));
+
+    if (isUpPressed) {
+      // Trigger Howling Wraiths Upward Eruption Spell
+      if (!this.abilities.howlingWraiths) {
+        this.focusPrompt = 'HOWLING WRAITHS LOCKED';
+        this.focusPromptTimer = 0.8;
+        return;
+      }
+
+      const soulCost = this.hasCharm('SPELL_TWISTER') ? 2 : 3;
+      if (this.soul < soulCost) {
+        this.focusPrompt = 'NEED 3 SOUL!';
+        this.focusPromptTimer = 0.8;
+        return;
+      }
+
+      this.soul -= soulCost;
+      this.isShrieking = true;
+      this.shriekTimer = 0.4;
+      this.didShriekImpact = true;
+      this.vy = -140; // Upward float lift
+
+      if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+      if (particles && particles.spawnShockwave) {
+        particles.spawnShockwave(this.x + this.width / 2, this.y - 15, 100, '#ffffff');
+      }
+      return;
+    }
 
     if (isDownPressed) {
       // Trigger Desolate Dive Spell
@@ -465,6 +505,15 @@ export class Player extends Entity {
       for (const proj of this.spellProjectiles) {
         proj.draw(ctx, camera);
       }
+    }
+
+    // Howling Wraiths Upward Towering Spirit Scream
+    if (this.isShrieking) {
+      ctx.fillStyle = 'rgba(220, 245, 255, 0.7)';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(screenX - 35, screenY - 140, 90, 150);
+      ctx.strokeRect(screenX - 35, screenY - 140, 90, 150);
     }
 
     // Desolate Dive Radiant Glowing Energy Aura
