@@ -76,7 +76,7 @@ export class InputHandler {
       case 'jump': return ['Space', ' ', 'KeyZ', 'z', 'Z', 'KeyJ', 'j', 'J', 'Enter'];
       case 'attack': return ['KeyX', 'x', 'X', 'KeyK', 'k', 'K'];
       case 'dash': return ['KeyC', 'c', 'C', 'KeyL', 'l', 'L', 'ShiftLeft', 'ShiftRight', 'Shift'];
-      case 'spell': return ['KeyQ', 'q', 'Q', 'KeyF', 'f', 'F', 'KeyB', 'b', 'B', 'Digit2', '2'];
+      case 'spell': return ['KeyQ', 'q', 'Q', 'KeyA', 'a', 'A', 'KeyF', 'f', 'F', 'KeyB', 'b', 'B', 'Digit2', '2'];
       case 'focus': return ['KeyH', 'h', 'H', 'KeyI', 'i', 'I', 'KeyV', 'v', 'V', 'KeyR', 'r', 'R', 'Digit1', '1'];
       case 'map': return ['KeyM', 'm', 'M', 'Tab'];
       case 'interact': return ['KeyE', 'e', 'E', 'ArrowDown', 'KeyS', 's', 'S'];
