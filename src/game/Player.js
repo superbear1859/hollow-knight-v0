@@ -176,6 +176,24 @@ export class Player extends Entity {
     this.onRightWall = false;
     Physics.checkTileCollision(this, tilemap, dt);
 
+    // Wall Slide Logic (Requires Mantis Claw)
+    const inAir = !this.grounded;
+    const touchingWall = (this.onLeftWall || this.onRightWall);
+    const pushingWall = (this.onLeftWall && input.isDown('left')) || (this.onRightWall && input.isDown('right'));
+
+    if (this.abilities.wallJump && inAir && touchingWall && (pushingWall || this.vy > 0)) {
+      this.isWallSliding = true;
+      if (this.vy > this.wallSlideSpeed) {
+        this.vy = this.wallSlideSpeed; // Controlled slow slide down wall (90px/s)
+      }
+      if (particles && Math.random() < 0.4) {
+        const dustX = this.onLeftWall ? this.x + 2 : this.x + this.width - 2;
+        particles.spawnDust(dustX, this.y + this.height * 0.6, 1);
+      }
+    } else {
+      this.isWallSliding = false;
+    }
+
     // Track Safe Ground Checkpoints
     if (this.grounded && tilemap) {
       const bounds = this.getBounds();
