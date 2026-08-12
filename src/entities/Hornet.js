@@ -8,13 +8,18 @@ export class Hornet extends Enemy {
     this.state = 'IDLE'; // IDLE, LUNGE, NEEDLE_THROW, SPHERE
     this.stateTimer = 1.0;
     this.facing = -1;
-    this.needleX = 0;
-    this.needleActive = false;
     this.isBoss = true;
     this.bossName = 'HORNET - PROTECTOR';
+
+    // Boomerang Needle Spear Attributes
+    this.needleActive = false;
+    this.needleOffset = 0;
+    this.needleMaxDistance = 320;
+    this.needlePhase = 'IDLE'; // IDLE, OUTBOUND, RETURNING
+    this.needleRotation = 0;
   }
 
-  update(dt, player, tilemap, soundManager, particles, camera) {
+  update(dt, player, room, soundManager, particles, camera) {
     super.update(dt);
     if (this.isDead) return;
 
@@ -23,7 +28,7 @@ export class Hornet extends Enemy {
     const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
     const dist = Math.abs(dx);
 
-    if (this.stateTimer <= 0) {
+    if (this.stateTimer <= 0 && this.needlePhase === 'IDLE') {
       this.facing = dx > 0 ? 1 : -1;
       const rand = Math.random();
 
@@ -32,22 +37,68 @@ export class Hornet extends Enemy {
         this.vx = this.facing * 340;
         this.vy = -180;
         this.stateTimer = 0.8;
-        soundManager.playDash();
-        particles.spawnDust(this.x, this.y + this.height, 6);
-      } else if (rand < 0.7) {
+        if (soundManager && soundManager.playDash) soundManager.playDash();
+        if (particles && particles.spawnDust) particles.spawnDust(this.x, this.y + this.height, 6);
+      } else if (rand < 0.75) {
         this.state = 'NEEDLE_THROW';
         this.vx = 0;
         this.needleActive = true;
-        this.needleX = this.x;
-        this.stateTimer = 1.2;
-        soundManager.playSlash();
+        this.needlePhase = 'OUTBOUND';
+        this.needleOffset = 0;
+        this.stateTimer = 1.8;
+        if (soundManager && soundManager.playSlash) soundManager.playSlash();
       } else {
         this.state = 'SPHERE';
         this.vx = 0;
         this.vy = -280;
         this.stateTimer = 1.0;
-        soundManager.playBossRoar();
-        particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 60, '#ff4466');
+        if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+        if (particles && particles.spawnShockwave) particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 60, '#ff4466');
+      }
+    }
+
+    // Handle Boomerang Needle Physics & Flight Cycle
+    if (this.state === 'NEEDLE_THROW' || this.needleActive) {
+      this.needleRotation += dt * 25;
+
+      const hornetCenterX = this.x + this.width / 2;
+      const hornetCenterY = this.y + this.height / 2 - 5;
+      const needleX = hornetCenterX + this.facing * this.needleOffset;
+      const needleY = hornetCenterY;
+
+      if (this.needlePhase === 'OUTBOUND') {
+        this.needleOffset += 480 * dt;
+        if (particles && Math.random() < 0.4) {
+          particles.spawnHitSparks(needleX, needleY, 1, '#ffffff');
+        }
+        if (this.needleOffset >= this.needleMaxDistance) {
+          this.needlePhase = 'RETURNING';
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        }
+      } else if (this.needlePhase === 'RETURNING') {
+        this.needleOffset -= 480 * dt;
+        if (particles && Math.random() < 0.4) {
+          particles.spawnHitSparks(needleX, needleY, 1, '#ff88aa');
+        }
+        if (this.needleOffset <= 0) {
+          this.needleOffset = 0;
+          this.needlePhase = 'IDLE';
+          this.needleActive = false;
+          this.state = 'IDLE';
+        }
+      }
+
+      // Boomerang Needle vs Player Collision Damage
+      if (this.needleActive && player && !player.invulnerable) {
+        const needleBounds = {
+          x: needleX - 22,
+          y: needleY - 12,
+          width: 44,
+          height: 24
+        };
+        if (Physics.rectIntersect(needleBounds, player.getBounds())) {
+          player.takeDamage(1, needleX, soundManager, particles, camera);
+        }
       }
     }
 
@@ -57,7 +108,7 @@ export class Hornet extends Enemy {
       this.vx *= 0.9;
     }
 
-    Physics.checkTileCollision(this, tilemap, dt);
+    Physics.checkTileCollision(this, room, dt);
   }
 
   draw(ctx, camera) {
@@ -97,29 +148,67 @@ export class Hornet extends Enemy {
     ctx.lineTo(4, -28);
     ctx.fill();
 
-    // Eyes
+    // Black Eye Sockets
     ctx.fillStyle = '#05060a';
     ctx.beginPath();
     ctx.ellipse(4, -16, 3, 5, 0.15, 0, Math.PI * 2);
     ctx.fill();
 
-    // Needle Sword
-    ctx.strokeStyle = '#e0ecfc';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(6, 4);
-    ctx.lineTo(38, -12);
-    ctx.stroke();
+    // Silk Thread & Boomerang Needle Throw Graphic
+    if (this.needleActive && this.needlePhase !== 'IDLE') {
+      const targetX = this.needleOffset;
+      const targetY = -5;
 
-    // Silk Thread Attack Effect
+      // Silver Silk Thread
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(6, 4);
+      ctx.lineTo(targetX, targetY);
+      ctx.stroke();
+
+      // Spinning Boomerang Needle Spear
+      ctx.save();
+      ctx.translate(targetX, targetY);
+      ctx.rotate(this.needleRotation);
+
+      // Silver Razor Blade
+      ctx.fillStyle = '#f0f4fc';
+      ctx.strokeStyle = '#a8b8d0';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-24, 0);
+      ctx.lineTo(0, -4);
+      ctx.lineTo(24, 0);
+      ctx.lineTo(0, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Crimson Handle Wrap
+      ctx.fillStyle = '#c81e3a';
+      ctx.fillRect(-4, -3, 8, 6);
+
+      ctx.restore();
+    } else {
+      // Held Needle Sword
+      ctx.strokeStyle = '#e0ecfc';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(6, 4);
+      ctx.lineTo(38, -12);
+      ctx.stroke();
+    }
+
+    // Silk Thread Sphere AOE Attack Effect
     if (this.state === 'SPHERE') {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.lineWidth = 1.5;
       for (let i = 0; i < 8; i++) {
         const angle = (i / 8) * Math.PI * 2;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(angle) * 45, Math.sin(angle) * 45);
+        ctx.lineTo(Math.cos(angle) * 55, Math.sin(angle) * 55);
         ctx.stroke();
       }
     }
