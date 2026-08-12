@@ -507,13 +507,87 @@ export class Player extends Entity {
       }
     }
 
-    // Howling Wraiths Upward Towering Spirit Scream
+    // Howling Wraiths Upward Eruption & Screaming Ghost Spirits
     if (this.isShrieking) {
-      ctx.fillStyle = 'rgba(220, 245, 255, 0.7)';
+      const centerX = screenX + 11;
+      const startY = screenY + 5;
+      const topY = screenY - 160;
+
+      // 1. Outer Ethereal Energy Flame Plume (Bezier Curve)
+      const grad = ctx.createLinearGradient(centerX, startY, centerX, topY);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      grad.addColorStop(0.3, 'rgba(140, 220, 255, 0.85)');
+      grad.addColorStop(0.7, 'rgba(40, 100, 180, 0.65)');
+      grad.addColorStop(1, 'rgba(10, 25, 55, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 15, startY);
+      ctx.bezierCurveTo(centerX - 35, startY - 50, centerX - 55, topY + 40, centerX - 45, topY);
+      ctx.lineTo(centerX + 45, topY);
+      ctx.bezierCurveTo(centerX + 55, topY + 40, centerX + 35, startY - 50, centerX + 15, startY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bright Core Beam
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.beginPath();
+      ctx.moveTo(centerX - 8, startY);
+      ctx.bezierCurveTo(centerX - 18, startY - 40, centerX - 30, topY + 30, centerX - 22, topY);
+      ctx.lineTo(centerX + 22, topY);
+      ctx.bezierCurveTo(centerX + 30, topY + 30, centerX + 18, startY - 40, centerX + 8, startY);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Screaming Ghost Spirit Masks (3 Ethereal Phantoms ascending)
+      const ghosts = [
+        { yOffset: 35, scale: 0.8, xShift: -12 },
+        { yOffset: 85, scale: 1.1, xShift: 10 },
+        { yOffset: 135, scale: 1.3, xShift: -5 }
+      ];
+
+      ghosts.forEach(g => {
+        const gy = startY - g.yOffset;
+        const gx = centerX + g.xShift;
+        const s = g.scale;
+
+        // Spirit Ghost Mask Head
+        ctx.fillStyle = 'rgba(240, 250, 255, 0.92)';
+        ctx.beginPath();
+        ctx.ellipse(gx, gy, 9 * s, 11 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gaping Screaming Mouth & Eye Sockets
+        ctx.fillStyle = '#050a15';
+        ctx.beginPath();
+        ctx.ellipse(gx - 3.5 * s, gy - 2 * s, 2 * s, 3.5 * s, -0.15, 0, Math.PI * 2);
+        ctx.ellipse(gx + 3.5 * s, gy - 2 * s, 2 * s, 3.5 * s, 0.15, 0, Math.PI * 2);
+        ctx.ellipse(gx, gy + 4 * s, 2.8 * s, 4.5 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ethereal Horns / Wisps
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.8 * s;
+        ctx.beginPath();
+        ctx.moveTo(gx - 6 * s, gy - 7 * s);
+        ctx.quadraticCurveTo(gx - 14 * s, gy - 18 * s, gx - 4 * s, gy - 22 * s);
+        ctx.moveTo(gx + 6 * s, gy - 7 * s);
+        ctx.quadraticCurveTo(gx + 14 * s, gy - 18 * s, gx + 4 * s, gy - 22 * s);
+        ctx.stroke();
+      });
+
+      // 3. Jagged Spirit Energy Tendrils
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.5;
-      ctx.fillRect(screenX - 35, screenY - 140, 90, 150);
-      ctx.strokeRect(screenX - 35, screenY - 140, 90, 150);
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const tY = startY - (i * 45 + 20);
+        ctx.beginPath();
+        ctx.moveTo(centerX - 25, tY);
+        ctx.lineTo(centerX - 10, tY - 15);
+        ctx.lineTo(centerX + 15, tY - 10);
+        ctx.lineTo(centerX + 30, tY - 25);
+        ctx.stroke();
+      }
     }
 
     // Desolate Dive Radiant Glowing Energy Aura
