@@ -485,9 +485,42 @@ export class Game {
     // Enemy AI & Combat Collisions
     for (let i = room.enemies.length - 1; i >= 0; i--) {
       const enemy = room.enemies[i];
-      if (!enemy.active) continue;
 
-      enemy.update(dt, this.player, room, this.sound, this.particles, this.camera);
+      // Enemy Defeat & Boss Rewards
+      if (enemy.isDead && !enemy.rewardSpawned) {
+        enemy.rewardSpawned = true;
+        const coins = GeoCoin.createMultiDenominations(
+          enemy.x + enemy.width / 2,
+          enemy.y + enemy.height / 2,
+          enemy.geoReward
+        );
+        room.collectibles.push(...coins);
+
+        if (enemy.isBoss) {
+          if (enemy.bossName.includes('FALSE KNIGHT')) {
+            this.bossesDefeated.falseKnight = true;
+            if (!this.player.abilities.vengefulSpirit) {
+              const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
+              room.collectibles.push(spellPedestal);
+              this.sound.playBossRoar();
+              this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
+              this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
+            }
+          }
+          if (enemy.bossName.includes('HORNET')) {
+            this.bossesDefeated.hornet = true;
+            if (!this.player.abilities.howlingWraiths) {
+              const wraithPedestal = new AbilityUnlock(400, 936, 'howlingWraiths', 'Howling Wraiths (Spell)');
+              room.collectibles.push(wraithPedestal);
+              this.sound.playBossRoar();
+              this.particles.spawnShockwave(400, 936, 140, '#ffffff');
+              this.particles.spawnHitSparks(400, 936, 24, '#88d6ff');
+            }
+          }
+        }
+      }
+
+      if (!enemy.active) continue;
 
       // Player Attack vs Enemy Hitbox
       if (this.player.isAttacking && this.player.attackHitbox && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
@@ -497,28 +530,6 @@ export class Game {
         if (isDownAttack) {
           this.player.pogoBounce();
           this.sound.playPogo();
-        }
-
-        if (defeated) {
-          const coins = GeoCoin.createMultiDenominations(
-            enemy.x + enemy.width / 2,
-            enemy.y + enemy.height / 2,
-            enemy.geoReward
-          );
-          room.collectibles.push(...coins);
-          if (enemy.isBoss) {
-            if (enemy.bossName.includes('FALSE KNIGHT')) {
-              this.bossesDefeated.falseKnight = true;
-              if (!this.player.abilities.vengefulSpirit) {
-                const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
-                room.collectibles.push(spellPedestal);
-                this.sound.playBossRoar();
-                this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
-                this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
-              }
-            }
-            if (enemy.bossName.includes('HORNET')) this.bossesDefeated.hornet = true;
-          }
         }
       }
 
@@ -561,6 +572,14 @@ export class Game {
         const hasPedestal = room.collectibles.some(c => c.abilityKey === 'vengefulSpirit');
         if (!hasPedestal) {
           room.collectibles.push(new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)'));
+        }
+      }
+
+      // Spawn Howling Wraiths Pedestal ONLY if Hornet has been defeated and ability is not yet unlocked
+      if (roomId === 'boss_hornet' && this.bossesDefeated.hornet && !this.player.abilities.howlingWraiths) {
+        const hasPedestal = room.collectibles.some(c => c.abilityKey === 'howlingWraiths');
+        if (!hasPedestal) {
+          room.collectibles.push(new AbilityUnlock(400, 936, 'howlingWraiths', 'Howling Wraiths (Spell)'));
         }
       }
 

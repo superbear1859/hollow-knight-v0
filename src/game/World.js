@@ -366,7 +366,6 @@ export class World {
     fogCanyon.fillBox(61, 31, 48, 3, MOSS_STONE);
 
     fogCanyon.voidGates.push(new VoidGate(2400, 800, 32, 192));
-    fogCanyon.collectibles.push(new AbilityUnlock(1600, 936, 'howlingWraiths', 'Howling Wraiths (Spell)'));
 
     fogCanyon.addDoor({
       x: 480, y: 0, width: 160, height: 100,
