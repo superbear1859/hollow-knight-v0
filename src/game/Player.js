@@ -74,6 +74,7 @@ export class Player extends Entity {
     this.superDashChargeTimer = 0;
     this.isSuperDashing = false;
     this.superDashDir = 1;
+    this.superDashTimer = 0;
 
     // Unlocked Abilities
     this.abilities = {
@@ -169,6 +170,7 @@ export class Player extends Entity {
 
     // Handle Crystal Heart Super Dash Flight State (Hold [F] Release Action)
     if (this.isSuperDashing) {
+      this.superDashTimer += dt;
       this.vx = this.superDashDir * 750; // High speed jet flight!
       this.vy = 0; // Zero gravity flight
       this.invulnerable = true;
@@ -190,8 +192,8 @@ export class Player extends Entity {
 
       Physics.checkTileCollision(this, tilemap, dt);
 
-      // Cancel Super Dash if player hits a wall in front
-      if (this.onLeftWall || this.onRightWall) {
+      // Cancel Super Dash if player hits a wall in front (Only check after 0.1s delay to clear launching wall!)
+      if (this.superDashTimer >= 0.1 && (this.onLeftWall || this.onRightWall)) {
         this.isSuperDashing = false;
         this.vx = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
@@ -397,6 +399,7 @@ export class Player extends Entity {
         // Launch Super Dash!
         this.isSuperDashing = true;
         this.isChargingSuperDash = false;
+        this.superDashTimer = 0;
         this.superDashDir = this.isWallSliding ? (this.onLeftWall ? 1 : -1) : this.facing;
         this.facing = this.superDashDir;
         this.vx = this.superDashDir * 750;
