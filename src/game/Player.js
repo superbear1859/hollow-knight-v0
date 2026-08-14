@@ -254,6 +254,7 @@ export class Player extends Entity {
 
     if (this.abilities.wallJump && inAir && touchingWall && (pushingWall || this.vy > 0)) {
       this.isWallSliding = true;
+      this.facing = this.onLeftWall ? 1 : -1; // Point AWAY from the wall while clinging to it!
       if (this.vy > this.wallSlideSpeed) {
         this.vy = this.wallSlideSpeed; // Controlled slow slide down wall (90px/s)
       }
@@ -305,21 +306,22 @@ export class Player extends Entity {
     // Execute Jump / Wall Jump
     if (this.jumpBufferTimer > 0) {
       const onWall = (this.onLeftWall || this.onRightWall) && !this.grounded;
-      if (this.grounded || this.coyoteTimer > 0) {
+      if (onWall && this.abilities.wallJump) {
+        const wallDir = this.onLeftWall ? 1 : -1;
+        this.vy = -450; // Strong upward jump lift
+        this.vx = wallDir * 340; // Strong diagonal push-off momentum away from the wall!
+        this.facing = wallDir; // Point away from wall in leap direction
+        this.wallJumpTimer = 0.24; // 240ms steering lockout away from wall
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+        soundManager.playSlash();
+        particles.spawnDust(this.x + (this.onLeftWall ? 0 : this.width), this.y + this.height / 2, 8);
+      } else if (this.grounded || this.coyoteTimer > 0) {
         this.vy = this.jumpForce;
         this.coyoteTimer = 0;
         this.jumpBufferTimer = 0;
         soundManager.playSlash();
         particles.spawnDust(this.x + this.width / 2, this.y + this.height, 6);
-      } else if (onWall && this.abilities.wallJump) {
-        this.vy = this.jumpForce * 0.9;
-        const wallDir = this.onLeftWall ? 1 : -1;
-        this.vx = wallDir * this.moveSpeed * 1.2;
-        this.facing = wallDir;
-        this.wallJumpTimer = 0.18;
-        this.jumpBufferTimer = 0;
-        soundManager.playSlash();
-        particles.spawnDust(this.x + (this.onLeftWall ? 0 : this.width), this.y + this.height / 2, 6);
       }
     }
 
