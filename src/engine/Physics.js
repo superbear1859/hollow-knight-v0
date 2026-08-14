@@ -8,7 +8,7 @@ export class Physics {
     const boxOffsetY = entity.boxOffsetY || 0;
 
     // Apply gravity
-    if (!entity.grounded && !entity.isDashing && !entity.isWallSliding) {
+    if (!entity.grounded && !entity.isDashing && !entity.isSuperDashing && !entity.isChargingSuperDash && !entity.isWallSliding) {
       entity.vy += (entity.gravity || 1100) * dt;
       const maxFallSpeed = entity.maxFallSpeed || 700;
       if (entity.vy > maxFallSpeed) {
