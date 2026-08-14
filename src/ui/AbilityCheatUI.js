@@ -10,6 +10,7 @@ export class AbilityCheatUI {
       { id: 'vengefulSpirit', name: 'Vengeful Spirit (Spell)', desc: 'Cast a blast of soul energy forward (Costs 3 Soul)' },
       { id: 'desolateDive', name: 'Desolate Dive (Spell)', desc: 'Slam downward to create a massive AoE shockwave explosion (Costs 3 Soul)' },
       { id: 'howlingWraiths', name: 'Howling Wraiths (Spell)', desc: 'Release a towering upward eruption of screaming soul phantoms (Costs 3 Soul)' },
+      { id: 'superDash', name: 'Crystal Heart (Super Dash - Hold [F])', desc: 'Hold [F] to charge and fly forward horizontally without stopping' },
       { id: 'unlockAll', name: '✦ UNLOCK ALL ABILITIES ✦', desc: 'Instantly grant all Metroidvania movement & spell powers' },
       { id: 'confirm', name: '✓ APPLY & RETURN TO GAME', desc: 'Save selected abilities and resume exploration' }
     ];
@@ -173,6 +174,7 @@ export class AbilityCheatUI {
       this.player.abilities.vengefulSpirit = true;
       this.player.abilities.desolateDive = true;
       this.player.abilities.howlingWraiths = true;
+      this.player.abilities.superDash = true;
       if (soundManager && soundManager.playBenchBell) soundManager.playBenchBell();
     } else if (opt.id === 'confirm') {
       if (soundManager && soundManager.playBenchBell) soundManager.playBenchBell();

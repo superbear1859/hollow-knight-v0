@@ -118,8 +118,9 @@ export class Physics {
     solidRects = getSolidRectsInBounds(bounds);
 
     for (const rect of solidRects) {
-      if (this.rectIntersect(bounds, rect)) {
-        if (entity.vy > 0) {
+      const isStandingOnTop = entity.vy >= 0 && Math.abs((bounds.y + bounds.height) - rect.y) <= 1.0 && bounds.x < rect.x + rect.width && bounds.x + bounds.width > rect.x;
+      if (this.rectIntersect(bounds, rect) || isStandingOnTop) {
+        if (entity.vy >= 0) {
           entity.y = rect.y - bounds.height - boxOffsetY;
           entity.vy = 0;
           entity.grounded = true;

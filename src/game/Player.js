@@ -69,6 +69,12 @@ export class Player extends Entity {
     this.focusPrompt = '';
     this.focusPromptTimer = 0;
 
+    // Crystal Heart (Super Dash)
+    this.isChargingSuperDash = false;
+    this.superDashChargeTimer = 0;
+    this.isSuperDashing = false;
+    this.superDashDir = 1;
+
     // Unlocked Abilities
     this.abilities = {
       dash: false,
@@ -76,7 +82,8 @@ export class Player extends Entity {
       wallJump: false,
       vengefulSpirit: false,
       desolateDive: false,
-      howlingWraiths: false
+      howlingWraiths: false,
+      superDash: false
     };
 
     // Charms & Modifiers
@@ -156,6 +163,42 @@ export class Player extends Entity {
         this.didDiveImpact = true;
         this.invulnerable = true;
         this.invulnerableTimer = 0.8;
+      }
+      return;
+    }
+
+    // Handle Crystal Heart Super Dash Flight State (Hold [F] Release Action)
+    if (this.isSuperDashing) {
+      this.vx = this.superDashDir * 750; // High speed jet flight!
+      this.vy = 0; // Zero gravity flight
+      this.invulnerable = true;
+      this.invulnerableTimer = 0.2; // Invulnerable to damage while Super Dashing!
+
+      if (particles && particles.spawnHitSparks && Math.random() < 0.6) {
+        particles.spawnHitSparks(this.x + (this.superDashDir > 0 ? 0 : this.width), this.y + this.height / 2, 2, '#ff66cc');
+      }
+
+      // Cancel Super Dash on Jump key [Space/Z/J/Enter] or Up Arrow [Up/W]
+      const isUpPressed = input && (input.isDown('up') || input.isJustPressed('up'));
+      const isJumpPressed = input && (input.isDown('jump') || input.isJustPressed('jump'));
+
+      if (isUpPressed || isJumpPressed) {
+        this.isSuperDashing = false;
+        this.vy = -180; // Cancel flight with slight lift
+        if (soundManager && soundManager.playSlash) soundManager.playSlash();
+      }
+
+      Physics.checkTileCollision(this, tilemap, dt);
+
+      // Cancel Super Dash if player hits a wall in front
+      if (this.onLeftWall || this.onRightWall) {
+        this.isSuperDashing = false;
+        this.vx = 0;
+        if (soundManager && soundManager.playHit) soundManager.playHit();
+        if (particles && particles.spawnHitSparks) {
+          particles.spawnHitSparks(this.x + (this.onLeftWall ? 0 : this.width), this.y + this.height / 2, 16, '#ff66cc');
+        }
+        if (camera && camera.shake) camera.shake(4, 0.18);
       }
       return;
     }
@@ -327,6 +370,47 @@ export class Player extends Entity {
         this.invulnerableTimer = this.dashDuration + 0.15; // 0.37s total invulnerability window
       }
       soundManager.playDash();
+    }
+
+    // Super Dash Charge Trigger (Hold [F] key on ground or while wall sliding)
+    const canChargeSuperDash = this.abilities.superDash && (this.grounded || this.isWallSliding);
+    const isSuperDashKeyDown = input && (input.isDown('superDash') || input.isDown('f') || input.isDown('KeyF'));
+
+    if (canChargeSuperDash && isSuperDashKeyDown && !this.isDashing && !this.isDiving && !this.isShrieking) {
+      if (!this.isChargingSuperDash) {
+        this.isChargingSuperDash = true;
+        this.superDashChargeTimer = 0;
+      }
+      this.superDashChargeTimer += dt;
+      this.vx = 0; // Freeze horizontal movement while charging
+      if (this.isWallSliding) this.vy = 0; // Freeze wall slide fall while charging!
+
+      // Spawn glowing pink crystal charge particles
+      if (particles && particles.spawnHitSparks && Math.random() < 0.4) {
+        const cx = this.x + (this.onLeftWall ? 0 : (this.onRightWall ? this.width : this.width / 2));
+        particles.spawnHitSparks(cx, this.y + this.height / 2, 2, '#ff66cc');
+      }
+    } else if (this.isChargingSuperDash) {
+      // Key released or no longer grounded/wall-sliding
+      if (this.superDashChargeTimer >= 0.35) {
+        // Launch Super Dash!
+        this.isSuperDashing = true;
+        this.isChargingSuperDash = false;
+        this.superDashDir = this.isWallSliding ? (this.onLeftWall ? 1 : -1) : this.facing;
+        this.facing = this.superDashDir;
+        this.vx = this.superDashDir * 750;
+        this.vy = 0;
+        this.invulnerable = true;
+        this.invulnerableTimer = 0.3;
+        if (soundManager && soundManager.playDash) soundManager.playDash();
+        if (particles && particles.spawnShockwave) {
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 80, '#ff66cc');
+        }
+      } else {
+        // Released too early (cancel charge)
+        this.isChargingSuperDash = false;
+        this.superDashChargeTimer = 0;
+      }
     }
 
     // Spell Cast Trigger (Vengeful Spirit vs Desolate Dive vs Howling Wraiths)
@@ -643,6 +727,31 @@ export class Player extends Entity {
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(screenX + 11, screenY + 17, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Crystal Heart Super Dash Charge & Jet Flight Effects
+    if (this.isChargingSuperDash) {
+      ctx.fillStyle = 'rgba(255, 100, 200, 0.45)';
+      ctx.strokeStyle = '#ff99dd';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(screenX + 11, screenY + 17, 26 + Math.sin(Date.now() / 40) * 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.isSuperDashing) {
+      const trailLen = 35;
+      const trailX = screenX + 11 - this.superDashDir * trailLen;
+      const trailY = screenY + 17;
+      ctx.fillStyle = 'rgba(255, 100, 200, 0.6)';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(screenX + 11, screenY + 6);
+      ctx.lineTo(trailX, trailY);
+      ctx.lineTo(screenX + 11, screenY + 28);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
     }

@@ -510,11 +510,17 @@ export class Game {
           if (enemy.bossName.includes('HORNET')) {
             this.bossesDefeated.hornet = true;
             if (!this.player.abilities.howlingWraiths) {
-              const wraithPedestal = new AbilityUnlock(400, 936, 'howlingWraiths', 'Howling Wraiths (Spell)');
+              const wraithPedestal = new AbilityUnlock(400, 606, 'howlingWraiths', 'Howling Wraiths (Spell)');
               room.collectibles.push(wraithPedestal);
               this.sound.playBossRoar();
-              this.particles.spawnShockwave(400, 936, 140, '#ffffff');
-              this.particles.spawnHitSparks(400, 936, 24, '#88d6ff');
+              this.particles.spawnShockwave(400, 606, 140, '#ffffff');
+              this.particles.spawnHitSparks(400, 606, 24, '#88d6ff');
+            }
+            if (!this.player.abilities.superDash) {
+              const superDashPedestal = new AbilityUnlock(550, 606, 'superDash', 'Crystal Heart (Super Dash - Hold [F])');
+              room.collectibles.push(superDashPedestal);
+              this.particles.spawnShockwave(550, 606, 140, '#ff66cc');
+              this.particles.spawnHitSparks(550, 606, 24, '#ff66cc');
             }
           }
         }
@@ -578,11 +584,19 @@ export class Game {
         }
       }
 
-      // Spawn Howling Wraiths Pedestal ONLY if Hornet has been defeated and ability is not yet unlocked
-      if (roomId === 'boss_hornet' && this.bossesDefeated.hornet && !this.player.abilities.howlingWraiths) {
-        const hasPedestal = room.collectibles.some(c => c.abilityKey === 'howlingWraiths');
-        if (!hasPedestal) {
-          room.collectibles.push(new AbilityUnlock(400, 936, 'howlingWraiths', 'Howling Wraiths (Spell)'));
+      // Spawn Howling Wraiths & Crystal Heart Pedestals ONLY if Hornet has been defeated and abilities are not yet unlocked
+      if (roomId === 'boss_hornet' && this.bossesDefeated.hornet) {
+        if (!this.player.abilities.howlingWraiths) {
+          const hasPedestal = room.collectibles.some(c => c.abilityKey === 'howlingWraiths');
+          if (!hasPedestal) {
+            room.collectibles.push(new AbilityUnlock(400, 606, 'howlingWraiths', 'Howling Wraiths (Spell)'));
+          }
+        }
+        if (!this.player.abilities.superDash) {
+          const hasPedestal = room.collectibles.some(c => c.abilityKey === 'superDash');
+          if (!hasPedestal) {
+            room.collectibles.push(new AbilityUnlock(550, 606, 'superDash', 'Crystal Heart (Super Dash - Hold [F])'));
+          }
         }
       }
 
