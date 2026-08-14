@@ -73,6 +73,7 @@ export class InputHandler {
       case 'right': return ['ArrowRight', 'KeyD', 'd', 'D'];
       case 'up': return ['ArrowUp', 'KeyW', 'w', 'W'];
       case 'down': return ['ArrowDown', 'KeyS', 's', 'S'];
+      // Jump is Space, Z, J, Enter (Up Arrow / W are strictly for aiming/moving UP, NOT jumping)
       case 'jump': return ['Space', ' ', 'KeyZ', 'z', 'Z', 'KeyJ', 'j', 'J', 'Enter'];
       case 'attack': return ['KeyX', 'x', 'X', 'KeyK', 'k', 'K'];
       case 'dash': return ['KeyC', 'c', 'C', 'KeyL', 'l', 'L', 'ShiftLeft', 'ShiftRight', 'Shift'];
