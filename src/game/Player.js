@@ -163,6 +163,9 @@ export class Player extends Entity {
     // Handle Dash State
     if (this.isDashing) {
       this.dashTimer -= dt;
+      if (!this.grounded && !this.isWallSliding) {
+        this.hasAirDashed = true; // Consumes air dash for any airborne frame (up, down, or sideways)
+      }
       if (this.dashDirY !== 0) {
         this.vx = this.dashDirX * this.dashSpeed;
         this.vy = this.dashDirY * this.dashSpeed;
