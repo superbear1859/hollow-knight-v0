@@ -247,12 +247,11 @@ export class Player extends Entity {
     this.onRightWall = false;
     Physics.checkTileCollision(this, tilemap, dt);
 
-    // Wall Slide Logic (Requires Mantis Claw)
+    // Wall Slide Logic (Requires Mantis Claw - Automatic upon touching wall in mid-air)
     const inAir = !this.grounded;
     const touchingWall = (this.onLeftWall || this.onRightWall);
-    const pushingWall = (this.onLeftWall && input.isDown('left')) || (this.onRightWall && input.isDown('right'));
 
-    if (this.abilities.wallJump && inAir && touchingWall && (pushingWall || this.vy > 0)) {
+    if (this.abilities.wallJump && inAir && touchingWall) {
       this.isWallSliding = true;
       this.facing = this.onLeftWall ? 1 : -1; // Point AWAY from the wall while clinging to it!
       if (this.vy > this.wallSlideSpeed) {

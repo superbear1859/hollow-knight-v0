@@ -97,16 +97,36 @@ export class Physics {
     let solidRects = getSolidRectsInBounds(horizBounds);
     for (const rect of solidRects) {
       if (this.rectIntersect(horizBounds, rect)) {
-        if (entity.vx > 0) {
-          entity.x = rect.x - bounds.width - boxOffsetX;
-          entity.onRightWall = true;
-        } else if (entity.vx < 0) {
-          entity.x = rect.x + rect.width - boxOffsetX;
+        const centerEntity = bounds.x + bounds.width / 2;
+        const centerRect = rect.x + rect.width / 2;
+        if (centerEntity > centerRect) {
           entity.onLeftWall = true;
+          entity.x = rect.x + rect.width - boxOffsetX;
+        } else {
+          entity.onRightWall = true;
+          entity.x = rect.x - bounds.width - boxOffsetX;
         }
         entity.vx = 0;
         bounds = entity.getBounds ? entity.getBounds() : { x: entity.x + boxOffsetX, y: entity.y + boxOffsetY, width: entity.width, height: entity.height };
         break;
+      }
+    }
+
+    // Proximity check 1px to left/right for stationary airborne entities touching walls
+    if (!entity.grounded) {
+      const leftSensor = { x: bounds.x - 1, y: horizBounds.y, width: 1, height: horizBounds.height };
+      const rightSensor = { x: bounds.x + bounds.width, y: horizBounds.y, width: 1, height: horizBounds.height };
+
+      const leftRects = getSolidRectsInBounds(leftSensor);
+      if (leftRects.length > 0) {
+        entity.onLeftWall = true;
+      } else if (entity.x <= 32) {
+        entity.onLeftWall = true;
+      }
+      if (getSolidRectsInBounds(rightSensor).length > 0) {
+        entity.onRightWall = true;
+      } else if (tilemap && tilemap.width && entity.x + entity.width >= tilemap.width - 32) {
+        entity.onRightWall = true;
       }
     }
 
