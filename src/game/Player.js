@@ -36,6 +36,7 @@ export class Player extends Entity {
     this.isShadowDash = false;
     this.dashDirX = 1;
     this.dashDirY = 0;
+    this.hasAirDashed = false;
 
     // Desolate Dive & Howling Wraiths Spells
     this.isDiving = false;
@@ -240,9 +241,10 @@ export class Player extends Entity {
       }
     }
 
-    // Grounded / Coyote Time Management
-    if (this.grounded) {
+    // Grounded / Coyote Time / Wall Slide Management
+    if (this.grounded || this.isWallSliding) {
       this.coyoteTimer = 0.12; // 120ms coyote time window
+      this.hasAirDashed = false; // Reset midair dash state upon touching ground or wall sliding!
     } else {
       if (this.coyoteTimer > 0) this.coyoteTimer -= dt;
     }
@@ -280,11 +282,14 @@ export class Player extends Entity {
       this.vy = -150;
     }
 
-    // Dash Trigger (Standard Dash Cooldown vs 1.0s Shade Cloak Cooldown)
-    const canDash = this.abilities.dash && this.dashCooldownTimer <= 0;
+    // Dash Trigger (Single Midair Dash Limit & Cooldowns)
+    const canDash = this.abilities.dash && this.dashCooldownTimer <= 0 && !this.hasAirDashed;
     if (input.isJustPressed('dash') && canDash) {
       this.isDashing = true;
       this.dashTimer = this.dashDuration;
+      if (!this.grounded && !this.isWallSliding) {
+        this.hasAirDashed = true; // Lock further air dashes until landing or wall sliding
+      }
       const cooldown = this.hasCharm('DASHMASTER') ? this.dashCooldown * 0.5 : this.dashCooldown;
       this.dashCooldownTimer = cooldown;
 
