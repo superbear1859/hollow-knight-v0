@@ -483,8 +483,8 @@ export class World {
         const tile = this.currentRoom.getTile(tx, ty);
         if (!tile) continue;
 
-        const screenX = tx * tileSize - view.x;
-        const screenY = ty * tileSize - view.y;
+        const screenX = Math.round(tx * tileSize - view.x);
+        const screenY = Math.round(ty * tileSize - view.y);
 
         if (tile.hazard || tile.type === 'spike') {
           ctx.fillStyle = tile.color || '#aa2222';

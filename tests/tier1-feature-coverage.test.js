@@ -354,7 +354,7 @@ describe('Tier 1: Feature Coverage - Enemy Economy & Bench Respawns', () => {
     game.update(dt);
 
     assertEquals(game.player.masks, game.player.maxMasks, 'Player masks restored to max after death respawn');
-    assertEquals(game.player.soul, 100, 'Player soul restored to 100 after death respawn');
+    assertEquals(game.player.soul, game.player.maxSoul, 'Player soul restored to maxSoul after death respawn');
   });
 });
 

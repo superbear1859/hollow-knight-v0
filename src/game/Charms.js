@@ -36,7 +36,7 @@ export const CHARMS = {
     name: 'Dashmaster',
     cost: 2,
     geoPrice: 280,
-    desc: 'Allows the bearer to dash more frequently and swiftly.',
+    desc: 'Allows the bearer to dash more frequently, as well as dash upwards and downwards.',
     icon: '⚡'
   }
 };

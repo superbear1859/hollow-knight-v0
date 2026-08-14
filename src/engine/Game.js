@@ -550,7 +550,7 @@ export class Game {
       this.player.x = saveData.lastBenchX || 700;
       this.player.y = saveData.lastBenchY || 580;
       this.player.masks = this.player.maxMasks;
-      this.player.soul = 0;
+      this.player.soul = this.player.maxSoul;
       if (this.world && typeof this.world.respawnEnemies === 'function') {
         this.world.respawnEnemies();
       }

@@ -72,8 +72,12 @@ export class Camera {
       }
     }
 
-    this.x += (this.targetX - this.x) * this.lerpSpeed;
-    this.y += (this.targetY - this.y) * this.lerpSpeed;
+    const lerpFactor = 1 - Math.pow(1 - this.lerpSpeed, Math.min(dt || 0.016, 0.1) * 60);
+    this.x += (this.targetX - this.x) * lerpFactor;
+    this.y += (this.targetY - this.y) * lerpFactor;
+
+    if (Math.abs(this.targetX - this.x) < 0.05) this.x = this.targetX;
+    if (Math.abs(this.targetY - this.y) < 0.05) this.y = this.targetY;
 
     // Smooth exponentially decaying screen shake
     if (this.shakeDuration > 0) {
@@ -95,8 +99,8 @@ export class Camera {
 
   getView() {
     return {
-      x: Math.round(this.x + this.shakeOffsetX),
-      y: Math.round(this.y + this.shakeOffsetY),
+      x: this.x + this.shakeOffsetX,
+      y: this.y + this.shakeOffsetY,
       width: this.width,
       height: this.height
     };

@@ -34,6 +34,8 @@ export class Player extends Entity {
     this.shadowDashCooldownTimer = 0;
     this.isDashing = false;
     this.isShadowDash = false;
+    this.dashDirX = 1;
+    this.dashDirY = 0;
 
     // Desolate Dive & Howling Wraiths Spells
     this.isDiving = false;
@@ -160,13 +162,20 @@ export class Player extends Entity {
     // Handle Dash State
     if (this.isDashing) {
       this.dashTimer -= dt;
-      this.vx = this.facing * this.dashSpeed;
-      this.vy = 0;
-      particles.spawnDust(this.x + this.width / 2, this.y + this.height, 2);
+      if (this.dashDirY !== 0) {
+        this.vx = this.dashDirX * this.dashSpeed;
+        this.vy = this.dashDirY * this.dashSpeed;
+      } else {
+        this.vx = this.dashDirX * this.dashSpeed;
+        this.vy = 0;
+      }
+      particles.spawnDust(this.x + this.width / 2, this.y + (this.dashDirY > 0 ? 0 : this.height), 2);
 
       if (this.dashTimer <= 0) {
         this.isDashing = false;
         this.isShadowDash = false;
+        this.dashDirX = this.facing;
+        this.dashDirY = 0;
       }
       Physics.checkTileCollision(this, tilemap, dt);
       return;
@@ -278,6 +287,29 @@ export class Player extends Entity {
       this.dashTimer = this.dashDuration;
       const cooldown = this.hasCharm('DASHMASTER') ? this.dashCooldown * 0.5 : this.dashCooldown;
       this.dashCooldownTimer = cooldown;
+
+      // Dashmaster Directional Controls (Upward / Downward / Horizontal)
+      if (this.hasCharm('DASHMASTER')) {
+        const isDown = input && input.isDown('down');
+        const isUp = input && input.isDown('up');
+
+        if (isDown && !this.grounded) {
+          this.dashDirX = 0;
+          this.dashDirY = 1;
+        } else if (isUp) {
+          this.dashDirX = 0;
+          this.dashDirY = -1;
+        } else {
+          this.dashDirX = this.facing;
+          this.dashDirY = 0;
+        }
+      } else {
+        this.dashDirX = this.facing;
+        this.dashDirY = 0;
+      }
+
+      this.vx = this.dashDirX * this.dashSpeed;
+      this.vy = this.dashDirY * this.dashSpeed;
 
       const canShadowDash = this.abilities.shadowDash && this.shadowDashCooldownTimer <= 0;
       this.isShadowDash = canShadowDash;
@@ -455,7 +487,7 @@ export class Player extends Entity {
   }
 
   pogoBounce() {
-    this.vy = -480; // Energetic upward pogo bounce
+    this.vy = -380; // Energetic upward pogo bounce
     this.coyoteTimer = 0.12;
   }
 
@@ -624,11 +656,13 @@ export class Player extends Entity {
 
     // Shadow Dash Visual Effect (Dark Void Phantom Trail)
     if (this.isDashing && this.isShadowDash) {
+      const trailX = screenX - (this.dashDirX || this.facing) * 14;
+      const trailY = screenY - (this.dashDirY || 0) * 14;
       ctx.fillStyle = 'rgba(10, 15, 30, 0.7)';
       ctx.strokeStyle = '#607090';
       ctx.lineWidth = 2;
-      ctx.fillRect(screenX - this.facing * 14, screenY, this.width, this.height);
-      ctx.strokeRect(screenX - this.facing * 14, screenY, this.width, this.height);
+      ctx.fillRect(trailX, trailY, this.width, this.height);
+      ctx.strokeRect(trailX, trailY, this.width, this.height);
     }
 
     // Invulnerability Flashing
@@ -645,7 +679,7 @@ export class Player extends Entity {
     // 1. Calculate Body Offsets & Rotations per State
     let bodyBobY = 0;
     let bodyTilt = 0;
-    let cloakWave = Math.sin(this.animTimer * 12) * 2;
+    let cloakWave = Math.sin(this.animTimer * 4) * 1.2;
     let leftLegOffset = 0;
     let rightLegOffset = 0;
 
@@ -656,7 +690,13 @@ export class Player extends Entity {
       rightLegOffset = -Math.sin(this.animTimer * 18) * 5;
       bodyTilt = this.facing * 0.08;
     } else if (this.isDashing) {
-      bodyTilt = this.facing * 0.38; // Aerodynamic dash forward tilt
+      if (this.dashDirY < 0) {
+        bodyTilt = -Math.PI / 2; // Upward dash vertical pose
+      } else if (this.dashDirY > 0) {
+        bodyTilt = Math.PI / 2; // Downward dash vertical pose
+      } else {
+        bodyTilt = (this.dashDirX || this.facing) * 0.38; // Horizontal aerodynamic dash tilt
+      }
       cloakWave = Math.sin(this.animTimer * 30) * 7;
     } else if (this.isWallSliding) {
       bodyTilt = this.onLeftWall ? -0.16 : 0.16; // Lean against wall
