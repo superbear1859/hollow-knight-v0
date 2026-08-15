@@ -614,7 +614,7 @@ export class Game {
     // Death / Respawn Check
     if (this.player.masks <= 0 && this.state !== 'GAME_OVER') {
       this.state = 'GAME_OVER';
-      this.sound.playHurt();
+      if (this.sound && typeof this.sound.playHurt === 'function') this.sound.playHurt();
       this.particles.spawnShockwave(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, 100, '#ff4444');
       setTimeout(() => this.respawnAtBench(), 1200);
     }
@@ -623,7 +623,7 @@ export class Game {
   respawnAtBench() {
     this.state = 'GAMEPLAY';
     this.player.isDead = false;
-    this.sound.playBossRoar();
+    if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
     const saveData = SaveSystem.load();
     this.world.loadRoom(saveData.lastBenchRoom || 'dirtmouth_01');
     this.player.x = saveData.lastBenchX || 700;
