@@ -255,6 +255,15 @@ export class Game {
 
     // Inventory State Update
     if (this.inventoryUI.isOpen) {
+      if (this.input.isJustPressed('spell') || this.input.isJustPressed('left')) {
+        this.inventoryUI.toggleTab(-1);
+      }
+      if (this.input.isJustPressed('interact') || this.input.isJustPressed('right')) {
+        this.inventoryUI.toggleTab(1);
+      }
+      if (this.input.isJustPressed('inventory')) {
+        this.inventoryUI.toggleTab(1);
+      }
       if (this.input.isJustPressed('up')) {
         this.inventoryUI.selectedIndex = Math.max(0, this.inventoryUI.selectedIndex - 1);
       }
@@ -263,7 +272,11 @@ export class Game {
         this.inventoryUI.selectedIndex = Math.min(count - 1, this.inventoryUI.selectedIndex + 1);
       }
       if (this.input.isJustPressed('jump')) {
-        this.inventoryUI.toggleCharm(this.player);
+        if (this.inventoryUI.currentTab === 'EQUIPMENT') {
+          this.inventoryUI.handleUpgrade(this.player, this.sound, this.particles, SaveSystem);
+        } else if (this.inventoryUI.currentTab === 'CHARMS') {
+          this.inventoryUI.toggleCharm(this.player);
+        }
       }
       if (this.input.isJustPressed('pause') || this.input.isJustPressed('exit')) {
         this.closeAllMenus();
@@ -279,9 +292,9 @@ export class Game {
       return;
     }
 
-    // Gameplay Pause / Open Inventory Trigger
-    if (this.input.isJustPressed('pause')) {
-      this.inventoryUI.open();
+    // Gameplay Open Inventory Trigger (Press [I] / [Tab] or [Esc] / Pause)
+    if (this.input.isJustPressed('inventory') || this.input.isJustPressed('pause')) {
+      this.inventoryUI.open('EQUIPMENT');
       this.state = 'BENCH';
       return;
     }
@@ -598,7 +611,8 @@ export class Game {
           this.player.pogoBounce();
           if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         }
-        const defeated = enemy.takeDamage(1, this.player.x + this.player.width / 2, this.sound, this.particles, this.player);
+        const nailDmg = typeof this.player.getNailDamage === 'function' ? this.player.getNailDamage() : 5;
+        const defeated = enemy.takeDamage(nailDmg, this.player.x + this.player.width / 2, this.sound, this.particles, this.player);
         if (defeated) {
           const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
           const coins = GeoCoin.createMultiDenominations(
@@ -821,7 +835,7 @@ export class Game {
     this.mapUI.draw(this.ctx, this.width, this.height, room.id, this.visitedRooms, this.player.hasCharm('WAYWARD_COMPASS'), this.input, (targetId) => this.teleportToRoom(targetId));
     this.shopUI.draw(this.ctx, this.width, this.height, this.player, this.input);
     this.dialogueUI.draw(this.ctx, this.width, this.height, this.input);
-    this.inventoryUI.draw(this.ctx, this.width, this.height, this.player, this.state === 'BENCH', this.input);
+    this.inventoryUI.draw(this.ctx, this.width, this.height, this.player, this.state === 'BENCH', this.input, this.sound, this.particles, SaveSystem);
     if (this.stagUI && this.stagUI.isOpen) {
       this.stagUI.draw(this.ctx, this.width, this.height, this.input, this.sound, (st) => this.travelViaStag(st));
     }

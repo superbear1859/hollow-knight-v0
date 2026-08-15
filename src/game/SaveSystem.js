@@ -8,6 +8,12 @@ export class SaveSystem {
       masks: 5,
       soul: 0, // Start with 0 soul
       maxSoul: 9,
+      nailLevel: 1,
+      paleOre: 1,
+      simpleKeys: 1,
+      rancidEggs: 2,
+      hallownestSeals: 1,
+      kingsIdols: 0,
       unlockedAbilities: {
         dash: false,
         shadowDash: false,

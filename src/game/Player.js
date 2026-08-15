@@ -15,6 +15,16 @@ export class Player extends Entity {
     this.maxSoul = 9;
     this.geo = 0;
 
+    // Equipment & Relics (Nail Strength Levels: 1=Old, 2=Sharpened, 3=Channeled, 4=Coiled, 5=Pure)
+    this.nailLevel = 1;
+    this.paleOre = 1;
+    this.simpleKeys = 1;
+    this.rancidEggs = 2;
+    this.hallownestSeals = 1;
+    this.kingsIdols = 0;
+    this.maskShards = 0;
+    this.vesselFragments = 0;
+
     // Movement Tuning
     this.moveSpeed = 210;
     this.jumpForce = -570;
@@ -116,6 +126,49 @@ export class Player extends Entity {
 
   hasCharm(charmId) {
     return this.equippedCharms && this.equippedCharms.includes(charmId);
+  }
+
+  getNailDamage() {
+    const baseDamage = [0, 5, 9, 13, 17, 21][this.nailLevel] || 5;
+    const strengthMultiplier = this.hasCharm('FRAGILE_STRENGTH') || this.hasCharm('UNBREAKABLE_STRENGTH') ? 1.5 : 1.0;
+    return Math.round(baseDamage * strengthMultiplier);
+  }
+
+  getNailName() {
+    const names = ['', 'Old Nail', 'Sharpened Nail', 'Channeled Nail', 'Coiled Nail', 'Pure Nail'];
+    return names[this.nailLevel] || 'Old Nail';
+  }
+
+  getNailUpgradeCost() {
+    const costs = [
+      null,
+      { geo: 250, ore: 0, nextName: 'Sharpened Nail', nextDamage: 9 },
+      { geo: 800, ore: 1, nextName: 'Channeled Nail', nextDamage: 13 },
+      { geo: 1500, ore: 2, nextName: 'Coiled Nail', nextDamage: 17 },
+      { geo: 3000, ore: 3, nextName: 'Pure Nail', nextDamage: 21 }
+    ];
+    return costs[this.nailLevel] || null;
+  }
+
+  upgradeNail(soundManager, particles) {
+    if (this.nailLevel >= 5) return false;
+    const cost = this.getNailUpgradeCost();
+    if (!cost) return false;
+
+    if (this.geo >= cost.geo && (this.paleOre || 0) >= cost.ore) {
+      this.geo -= cost.geo;
+      this.paleOre = Math.max(0, (this.paleOre || 0) - cost.ore);
+      this.nailLevel++;
+      if (soundManager && soundManager.playBenchBell) soundManager.playBenchBell();
+      if (particles && particles.spawnShockwave) {
+        particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 100, '#ffffff');
+      }
+      if (particles && particles.spawnHitSparks) {
+        particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 24, '#ffcf40');
+      }
+      return true;
+    }
+    return false;
   }
 
   addSoul(amount = 1) {

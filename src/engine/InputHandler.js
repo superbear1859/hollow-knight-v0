@@ -81,8 +81,9 @@ export class InputHandler {
       case 'dash': return ['KeyC', 'c', 'C', 'KeyL', 'l', 'L', 'ShiftLeft', 'ShiftRight', 'Shift'];
       case 'superDash': return ['KeyF', 'f', 'F'];
       case 'spell': return ['KeyQ', 'q', 'Q', 'KeyA', 'a', 'A', 'KeyB', 'b', 'B', 'Digit2', '2'];
-      case 'focus': return ['KeyH', 'h', 'H', 'KeyI', 'i', 'I', 'KeyV', 'v', 'V', 'KeyR', 'r', 'R', 'Digit1', '1'];
-      case 'map': return ['KeyM', 'm', 'M', 'Tab'];
+      case 'focus': return ['KeyH', 'h', 'H', 'KeyV', 'v', 'V', 'KeyR', 'r', 'R', 'Digit1', '1'];
+      case 'inventory': return ['KeyI', 'i', 'I', 'Tab', 'KeyU', 'u', 'U'];
+      case 'map': return ['KeyM', 'm', 'M'];
       case 'interact': return ['KeyE', 'e', 'E', 'ArrowDown', 'KeyS', 's', 'S'];
       case 'pause': return ['Escape', 'KeyP', 'p', 'P', 'Backspace'];
       case 'exit': return ['Escape', 'KeyP', 'p', 'P', 'Backspace'];
