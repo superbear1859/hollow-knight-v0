@@ -396,15 +396,21 @@ export class Game {
       // 1. Down-slash over Acid
       if (isDownAttack && Physics.checkBoundsAcid(hitbox, room)) {
         this.player.pogoBounce();
-        this.sound.playPogo();
-        this.particles.spawnShockwave(hitCenterX, hitCenterY, 40, '#24a058');
-        this.particles.spawnHitSparks(hitCenterX, hitCenterY, 8, '#40ff80');
+        if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
+        if (this.particles && typeof this.particles.spawnShockwave === 'function') {
+          this.particles.spawnShockwave(hitCenterX, hitCenterY, 40, '#24a058');
+        }
+        if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
+          this.particles.spawnHitSparks(hitCenterX, hitCenterY, 8, '#40ff80');
+        }
       }
       // 2. Down-slash over Spikes
       else if (isDownAttack && Physics.checkBoundsHazard(hitbox, room)) {
         this.player.pogoBounce();
-        this.sound.playPogo();
-        this.particles.spawnHitSparks(hitCenterX, hitCenterY, 10, '#ffaa44');
+        if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
+        if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
+          this.particles.spawnHitSparks(hitCenterX, hitCenterY, 10, '#ffaa44');
+        }
       }
 
       // 3. Attack vs Crumbling Platforms
@@ -413,8 +419,10 @@ export class Game {
           if (platform.active && platform.solid && Physics.rectIntersect(hitbox, platform.getBounds())) {
             if (isDownAttack) {
               this.player.pogoBounce();
-              this.sound.playPogo();
-              this.particles.spawnHitSparks(hitCenterX, platform.y, 6, '#aaaaaa');
+              if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
+              if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
+                this.particles.spawnHitSparks(hitCenterX, platform.y, 6, '#aaaaaa');
+              }
             }
             platform.onStepOn();
           }
@@ -427,7 +435,7 @@ export class Game {
           if (wall.active && wall.solid && Physics.rectIntersect(hitbox, wall.getBounds())) {
             if (isDownAttack) {
               this.player.pogoBounce();
-              this.sound.playPogo();
+              if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
             }
             wall.takeDamage(1, this.sound, this.particles, room);
           }
@@ -485,7 +493,7 @@ export class Game {
     if (room.stagStations) {
       for (const station of room.stagStations) {
         if (station.isPlayerNear(this.player) && this.input.isJustPressed('interact')) {
-          this.sound.playBenchBell();
+          if (this.sound && typeof this.sound.playBenchBell === 'function') this.sound.playBenchBell();
           this.stagUI.open(station.stationId);
           this.state = 'STAG';
         }
@@ -522,7 +530,7 @@ export class Game {
             if (!this.player.abilities.vengefulSpirit) {
               const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
               room.collectibles.push(spellPedestal);
-              this.sound.playBossRoar();
+              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
               this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
               this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
             }
@@ -532,7 +540,7 @@ export class Game {
             if (!this.player.abilities.howlingWraiths) {
               const wraithPedestal = new AbilityUnlock(400, 606, 'howlingWraiths', 'Howling Wraiths (Spell)');
               room.collectibles.push(wraithPedestal);
-              this.sound.playBossRoar();
+              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
               this.particles.spawnShockwave(400, 606, 140, '#ffffff');
               this.particles.spawnHitSparks(400, 606, 24, '#88d6ff');
             }
@@ -548,7 +556,7 @@ export class Game {
             if (!this.player.abilities.desolateDive) {
               const divePedestal = new AbilityUnlock(1600, 600, 'desolateDive', 'Desolate Dive (Spell)');
               room.collectibles.push(divePedestal);
-              this.sound.playBossRoar();
+              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
               this.particles.spawnShockwave(1600, 600, 140, '#88d6ff');
             }
           }
@@ -557,14 +565,14 @@ export class Game {
             if (!this.player.abilities.doubleJump) {
               const wingPedestal = new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)');
               room.collectibles.push(wingPedestal);
-              this.sound.playBossRoar();
+              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
               this.particles.spawnShockwave(1600, 672, 140, '#88ffaa');
               this.particles.spawnHitSparks(1600, 672, 24, '#ffffff');
             }
           }
           if (enemy.bossName.includes('DUNG DEFENDER')) {
             this.bossesDefeated.dungDefender = true;
-            this.sound.playBossRoar();
+            if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
             this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#d7ccc8');
           }
         }
@@ -580,7 +588,7 @@ export class Game {
         const isDownAttack = this.player.attackDirection === 'down';
         if (isDownAttack) {
           this.player.pogoBounce();
-          this.sound.playPogo();
+          if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         }
         const defeated = enemy.takeDamage(1, this.player.x + this.player.width / 2, this.sound, this.particles, this.player);
         if (defeated) {
@@ -601,12 +609,14 @@ export class Game {
     }
 
     // Nail Slash vs Boss Arena Doors
-    if (this.player.isAttacking && this.player.attackHitbox && currentBoss) {
+    if (this.player.isAttacking && this.player.attackHitbox && activeBoss && room.doors) {
       // Iron portcullis reflects nail attacks with sparks
       for (const door of room.doors) {
         if (Physics.rectIntersect(this.player.attackHitbox, door)) {
-          this.sound.playHit();
-          this.particles.spawnHitSparks(door.x + door.width / 2, door.y + door.height / 2, 8, '#ff4444');
+          if (this.sound && typeof this.sound.playHit === 'function') this.sound.playHit();
+          if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
+            this.particles.spawnHitSparks(door.x + door.width / 2, door.y + door.height / 2, 8, '#ff4444');
+          }
         }
       }
     }
