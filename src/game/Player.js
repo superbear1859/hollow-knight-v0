@@ -56,6 +56,7 @@ export class Player extends Entity {
     this.attackDirection = 'horizontal';
     this.attackHitbox = null;
     this.attackKeyHeld = false;
+    this.hasHitThisSwing = false;
 
     // Spells
     this.spellProjectiles = [];
@@ -138,6 +139,7 @@ export class Player extends Entity {
       if (this.attackTimer <= 0) {
         this.isAttacking = false;
         this.attackHitbox = null;
+        this.hasHitThisSwing = false;
       }
     }
 
@@ -612,10 +614,11 @@ export class Player extends Entity {
   }
 
   pogoBounce() {
-    this.vy = -380; // Energetic upward pogo bounce
+    this.vy = -390; // Natural, crisp upward pogo bounce
     this.coyoteTimer = 0.12;
     this.hasAirDashed = false;
     this.hasDoubleJumped = false; // Reset double jump on nail pogo strike!
+    this.hasHitThisSwing = true; // Lock further pogo impulses until next nail swing
   }
 
   performAttack(input, soundManager, particles) {
@@ -624,6 +627,7 @@ export class Player extends Entity {
     const attackThickness = 22; // Sleek 22px thickness
 
     this.isAttacking = true;
+    this.hasHitThisSwing = false;
     const cooldown = this.hasCharm('QUICK_SLASH') ? this.attackCooldown * 0.6 : this.attackCooldown;
     this.attackTimer = cooldown;
 

@@ -401,7 +401,7 @@ export class Game {
       const hitCenterY = hitbox.y + hitbox.height / 2;
 
       // 1. Down-slash over Acid
-      if (isDownAttack && Physics.checkBoundsAcid(hitbox, room)) {
+      if (isDownAttack && !this.player.hasHitThisSwing && Physics.checkBoundsAcid(hitbox, room)) {
         this.player.pogoBounce();
         if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         if (this.particles && typeof this.particles.spawnShockwave === 'function') {
@@ -412,7 +412,7 @@ export class Game {
         }
       }
       // 2. Down-slash over Spikes
-      else if (isDownAttack && Physics.checkBoundsHazard(hitbox, room)) {
+      else if (isDownAttack && !this.player.hasHitThisSwing && Physics.checkBoundsHazard(hitbox, room)) {
         this.player.pogoBounce();
         if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
@@ -424,7 +424,7 @@ export class Game {
       if (room.platforms) {
         for (const platform of room.platforms) {
           if (platform.active && platform.solid && Physics.rectIntersect(hitbox, platform.getBounds())) {
-            if (isDownAttack) {
+            if (isDownAttack && !this.player.hasHitThisSwing) {
               this.player.pogoBounce();
               if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
               if (this.particles && typeof this.particles.spawnHitSparks === 'function') {
@@ -440,7 +440,7 @@ export class Game {
       if (room.walls) {
         for (const wall of room.walls) {
           if (wall.active && wall.solid && Physics.rectIntersect(hitbox, wall.getBounds())) {
-            if (isDownAttack) {
+            if (isDownAttack && !this.player.hasHitThisSwing) {
               this.player.pogoBounce();
               if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
             }
@@ -593,7 +593,7 @@ export class Game {
       // Player Attack vs Enemy Hitbox
       if (this.player.isAttacking && this.player.attackHitbox && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
         const isDownAttack = this.player.attackDirection === 'down';
-        if (isDownAttack) {
+        if (isDownAttack && !this.player.hasHitThisSwing) {
           this.player.pogoBounce();
           if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         }
