@@ -192,8 +192,8 @@ export class Player extends Entity {
 
       Physics.checkTileCollision(this, tilemap, dt);
 
-      // Cancel Super Dash if player hits a wall in front (Only check after 0.1s delay to clear launching wall!)
-      if (this.superDashTimer >= 0.1 && (this.onLeftWall || this.onRightWall)) {
+      // Cancel Super Dash if player hits a wall in front (Only check after 0.3s delay to clear launching wall!)
+      if (this.superDashTimer >= 0.3 && (this.onLeftWall || this.onRightWall)) {
         this.isSuperDashing = false;
         this.vx = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
