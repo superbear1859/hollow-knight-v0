@@ -306,7 +306,8 @@ export class Game {
           if (Math.hypot(edx, edy) <= 150) {
             const defeated = enemy.takeDamage(25, impactX, this.sound, this.particles, this.player);
             if (defeated) {
-              const coins = GeoCoin.createMultiDenominations(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.geoReward);
+              const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
+              const coins = GeoCoin.createMultiDenominations(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, geoVal);
               room.collectibles.push(...coins);
             }
           }
@@ -349,7 +350,8 @@ export class Game {
           if (isHorizNear && isVertAbove) {
             const defeated = enemy.takeDamage(30, impactX, this.sound, this.particles, this.player);
             if (defeated) {
-              const coins = GeoCoin.createMultiDenominations(enemyCenterX, enemyCenterY, enemy.geoReward);
+              const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
+              const coins = GeoCoin.createMultiDenominations(enemyCenterX, enemyCenterY, geoVal);
               room.collectibles.push(...coins);
             }
           }
@@ -496,10 +498,11 @@ export class Game {
       // Enemy Defeat & Boss Rewards
       if (enemy.isDead && !enemy.rewardSpawned) {
         enemy.rewardSpawned = true;
+        const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
         const coins = GeoCoin.createMultiDenominations(
           enemy.x + enemy.width / 2,
           enemy.y + enemy.height / 2,
-          enemy.geoReward
+          geoVal
         );
         room.collectibles.push(...coins);
 

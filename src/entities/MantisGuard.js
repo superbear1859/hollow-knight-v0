@@ -3,7 +3,7 @@ import { Physics } from '../engine/Physics.js';
 
 export class MantisGuard extends Enemy {
   constructor(x, y) {
-    super(x, y, 32, 40, 5, 10);
+    super(x, y, 32, 40, 5, { min: 18, max: 24 });
     this.speed = 100;
     this.facing = -1;
     this.attackTimer = 0;

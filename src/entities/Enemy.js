@@ -13,6 +13,15 @@ export class Enemy extends Entity {
     this.isDead = false;
   }
 
+  getGeoReward() {
+    if (typeof this.geoReward === 'object' && this.geoReward !== null) {
+      const min = this.geoReward.min || 1;
+      const max = this.geoReward.max || min;
+      return Math.floor(min + Math.random() * (max - min + 1));
+    }
+    return typeof this.geoReward === 'number' ? this.geoReward : 4;
+  }
+
   takeDamage(damage, sourceX, soundManager, particles, player) {
     if (this.invulnerable || this.isDead) return false;
 
@@ -25,8 +34,10 @@ export class Enemy extends Entity {
     this.vx = knockDir * 180;
     this.vy = -100;
 
-    soundManager.playHit();
-    particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 8, '#ffffff');
+    if (soundManager && soundManager.playHit) soundManager.playHit();
+    if (particles && particles.spawnHitSparks) {
+      particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 8, '#ffffff');
+    }
 
     if (player) {
       player.addSoul(1);
@@ -35,8 +46,10 @@ export class Enemy extends Entity {
     if (this.hp <= 0) {
       this.isDead = true;
       this.active = false;
-      soundManager.playPogo();
-      particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 16, '#ffcf40');
+      if (soundManager && soundManager.playPogo) soundManager.playPogo();
+      if (particles && particles.spawnHitSparks) {
+        particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 16, '#ffcf40');
+      }
       return true; // Enemy defeated
     }
 

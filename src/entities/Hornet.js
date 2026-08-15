@@ -3,7 +3,7 @@ import { Physics } from '../engine/Physics.js';
 
 export class Hornet extends Enemy {
   constructor(x, y) {
-    super(x, y, 32, 48, 50, 150);
+    super(x, y, 32, 48, 50, 250);
     this.speed = 220;
     this.state = 'IDLE'; // IDLE, JUMP, LUNGE, AERIAL_DASH, NEEDLE_THROW, SPHERE
     this.stateTimer = 0.5;

@@ -3,7 +3,7 @@ import { Physics } from '../engine/Physics.js';
 
 export class Crawlid extends Enemy {
   constructor(x, y) {
-    super(x, y, 28, 20, 2, 3);
+    super(x, y, 28, 20, 2, { min: 2, max: 4 });
     this.speed = 40;
     this.facing = Math.random() > 0.5 ? 1 : -1;
   }

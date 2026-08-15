@@ -2,7 +2,7 @@ import { Enemy } from './Enemy.js';
 
 export class Vengefly extends Enemy {
   constructor(x, y) {
-    super(x, y, 26, 26, 3, 5);
+    super(x, y, 26, 26, 3, { min: 4, max: 6 });
     this.gravity = 0; // Flying
     this.startX = x;
     this.startY = y;

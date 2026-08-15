@@ -3,7 +3,7 @@ import { Physics } from '../engine/Physics.js';
 
 export class HuskSentinel extends Enemy {
   constructor(x, y) {
-    super(x, y, 30, 42, 6, 12);
+    super(x, y, 30, 42, 6, { min: 45, max: 55 });
     this.speed = 60;
     this.attackTimer = 0;
     this.attackCooldown = 2.0;

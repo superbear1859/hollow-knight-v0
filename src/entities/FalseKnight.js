@@ -3,7 +3,7 @@ import { Physics } from '../engine/Physics.js';
 
 export class FalseKnight extends Enemy {
   constructor(x, y) {
-    super(x, y, 70, 90, 45, 100);
+    super(x, y, 70, 90, 45, 200);
     this.speed = 80;
     this.state = 'IDLE'; // IDLE, MOVE, SLAM, RAGE, STAGGERED
     this.stateTimer = 1.0;
