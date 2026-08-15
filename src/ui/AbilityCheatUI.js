@@ -12,7 +12,7 @@ export class AbilityCheatUI {
       { id: 'howlingWraiths', name: 'Howling Wraiths (Spell)', desc: 'Release a towering upward eruption of screaming soul phantoms (Costs 3 Soul)' },
       { id: 'superDash', name: 'Crystal Heart (Super Dash - Hold [F])', desc: 'Hold [F] to charge and fly forward horizontally without stopping' },
       { id: 'doubleJump', name: 'Monarch Wings (Double Jump)', desc: 'Leap a second time in mid-air with glowing radiant wings' },
-      { id: 'soulOrbs', name: 'Soul Spiral (Orbiting Soul Orbs)', desc: '4 revolving ethereal soul orbs that shield against attacks and strike enemies' },
+      { id: 'soulOrbs', name: 'Soul Spiral (Orbiting Soul Orbs)', desc: '2 revolving soul orbs that deal 4 chip damage and launch tracking soul bolts on spell cast' },
       { id: 'unlockAll', name: '✦ UNLOCK ALL ABILITIES ✦', desc: 'Instantly grant all Metroidvania movement & spell powers' },
       { id: 'confirm', name: '✓ APPLY & RETURN TO GAME', desc: 'Save selected abilities and resume exploration' }
     ];

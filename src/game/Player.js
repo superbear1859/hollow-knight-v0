@@ -95,11 +95,12 @@ export class Player extends Entity {
     this.hasDoubleJumped = false;
     this.doubleJumpEffectTimer = 0;
 
-    // Soul Spiral (Soul Master Orbiting Orbs)
-    this.soulOrbsCount = 4;
-    this.maxSoulOrbs = 4;
+    // Soul Spiral (Soul Master Orbiting Orbs - Balanced Tuning)
+    this.soulOrbsCount = 2;
+    this.maxSoulOrbs = 2;
     this.soulOrbAngle = 0;
     this.soulOrbRegenTimer = 0;
+    this.soulOrbHitCooldown = 0;
     this.homingSoulBolts = [];
 
     // Charms & Modifiers
@@ -162,39 +163,41 @@ export class Player extends Entity {
       }
     }
 
-    // Update Soul Spiral Orbiting Orbs & Homing Bolts
+    // Update Soul Spiral Orbiting Orbs & Homing Bolts (Balanced Tuning)
     if (this.abilities.soulOrbs) {
-      this.soulOrbAngle += dt * 3.2;
+      this.soulOrbAngle += dt * 2.6;
+      if (this.soulOrbHitCooldown > 0) this.soulOrbHitCooldown -= dt;
 
-      // Passive regeneration of soul orbs (1 orb every 2.5s)
+      // Passive regeneration of soul orbs (1 orb every 6.0s)
       if (this.soulOrbsCount < this.maxSoulOrbs) {
         this.soulOrbRegenTimer += dt;
-        if (this.soulOrbRegenTimer >= 2.5) {
+        if (this.soulOrbRegenTimer >= 6.0) {
           this.soulOrbsCount++;
           this.soulOrbRegenTimer = 0;
           if (particles && particles.spawnHitSparks) {
-            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 6, '#88d6ff');
+            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 4, '#88d6ff');
           }
         }
       }
 
-      // Check contact damage against nearby active enemies
-      if (this.soulOrbsCount > 0 && tilemap && tilemap.enemies) {
+      // Check contact damage against nearby active enemies (Balanced 4 chip damage)
+      if (this.soulOrbsCount > 0 && this.soulOrbHitCooldown <= 0 && tilemap && tilemap.enemies) {
         for (let i = 0; i < this.soulOrbsCount; i++) {
           const angle = this.soulOrbAngle + (i * Math.PI * 2 / this.maxSoulOrbs);
-          const orbX = this.x + this.width / 2 + Math.cos(angle) * 44;
-          const orbY = this.y + this.height / 2 + Math.sin(angle) * 32;
-          const orbBounds = { x: orbX - 10, y: orbY - 10, width: 20, height: 20 };
+          const orbX = this.x + this.width / 2 + Math.cos(angle) * 42;
+          const orbY = this.y + this.height / 2 + Math.sin(angle) * 30;
+          const orbBounds = { x: orbX - 8, y: orbY - 8, width: 16, height: 16 };
 
           for (const enemy of tilemap.enemies) {
             if (enemy && enemy.active && !enemy.isDead && Physics.rectIntersect(orbBounds, enemy.getBounds())) {
-              enemy.takeDamage(15, orbX, soundManager, particles, this);
+              enemy.takeDamage(4, orbX, soundManager, particles, this);
               this.soulOrbsCount--;
+              this.soulOrbHitCooldown = 0.4;
               if (particles && particles.spawnShockwave) {
-                particles.spawnShockwave(orbX, orbY, 60, '#88d6ff');
+                particles.spawnShockwave(orbX, orbY, 40, '#88d6ff');
               }
               if (particles && particles.spawnHitSparks) {
-                particles.spawnHitSparks(orbX, orbY, 10, '#ffffff');
+                particles.spawnHitSparks(orbX, orbY, 6, '#ffffff');
               }
               break;
             }
@@ -203,7 +206,7 @@ export class Player extends Entity {
       }
     }
 
-    // Update Homing Soul Bolts
+    // Update Homing Soul Bolts (Balanced 5 damage)
     if (this.homingSoulBolts) {
       for (let i = this.homingSoulBolts.length - 1; i >= 0; i--) {
         const bolt = this.homingSoulBolts[i];
@@ -215,7 +218,7 @@ export class Player extends Entity {
 
         // Find nearest active enemy
         let targetEnemy = null;
-        let minDist = 400;
+        let minDist = 350;
         if (tilemap && tilemap.enemies) {
           for (const enemy of tilemap.enemies) {
             if (enemy && enemy.active && !enemy.isDead) {
@@ -232,34 +235,34 @@ export class Player extends Entity {
           const targetX = targetEnemy.x + targetEnemy.width / 2;
           const targetY = targetEnemy.y + targetEnemy.height / 2;
           const angle = Math.atan2(targetY - bolt.y, targetX - bolt.x);
-          bolt.vx += (Math.cos(angle) * 580 - bolt.vx) * dt * 8;
-          bolt.vy += (Math.sin(angle) * 580 - bolt.vy) * dt * 8;
+          bolt.vx += (Math.cos(angle) * 520 - bolt.vx) * dt * 6;
+          bolt.vy += (Math.sin(angle) * 520 - bolt.vy) * dt * 6;
         }
 
         bolt.x += bolt.vx * dt;
         bolt.y += bolt.vy * dt;
 
-        if (particles && Math.random() < 0.4) {
+        if (particles && Math.random() < 0.3) {
           particles.add({
             x: bolt.x,
             y: bolt.y,
-            vx: (Math.random() - 0.5) * 40,
-            vy: (Math.random() - 0.5) * 40,
-            size: 3,
+            vx: (Math.random() - 0.5) * 30,
+            vy: (Math.random() - 0.5) * 30,
+            size: 2.5,
             color: '#88d6ff',
-            life: 0.2,
+            life: 0.18,
             fade: true
           });
         }
 
-        // Hit check vs enemy
+        // Hit check vs enemy (Balanced 5 damage)
         if (tilemap && tilemap.enemies) {
           for (const enemy of tilemap.enemies) {
-            if (enemy && enemy.active && !enemy.isDead && Physics.rectIntersect({ x: bolt.x - 12, y: bolt.y - 12, width: 24, height: 24 }, enemy.getBounds())) {
-              enemy.takeDamage(20, bolt.x, soundManager, particles, this);
+            if (enemy && enemy.active && !enemy.isDead && Physics.rectIntersect({ x: bolt.x - 10, y: bolt.y - 10, width: 20, height: 20 }, enemy.getBounds())) {
+              enemy.takeDamage(5, bolt.x, soundManager, particles, this);
               bolt.active = false;
               if (particles && particles.spawnShockwave) {
-                particles.spawnShockwave(bolt.x, bolt.y, 70, '#88d6ff');
+                particles.spawnShockwave(bolt.x, bolt.y, 45, '#88d6ff');
               }
               break;
             }
