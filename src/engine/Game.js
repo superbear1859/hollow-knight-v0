@@ -286,6 +286,13 @@ export class Game {
       return;
     }
 
+    // Player Defeated State (Clean death transition without audio spam)
+    if (this.state === 'GAME_OVER') {
+      this.particles.update(dt);
+      this.camera.follow(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, dt);
+      return;
+    }
+
     // ----------------------------------------------------
     // GAMEPLAY STATE UPDATE
     // ----------------------------------------------------
@@ -624,20 +631,29 @@ export class Game {
     // Death / Respawn Check
     if (this.player.masks <= 0 && this.state !== 'GAME_OVER') {
       this.state = 'GAME_OVER';
+      this.player.isDead = true;
+      this.player.invulnerable = true;
+      this.player.vx = 0;
+      this.player.vy = 0;
       if (this.sound && typeof this.sound.playHurt === 'function') this.sound.playHurt();
       this.particles.spawnShockwave(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, 100, '#ff4444');
-      setTimeout(() => this.respawnAtBench(), 1200);
+      setTimeout(() => this.respawnAtBench(), 1000);
+      return;
     }
   }
 
   respawnAtBench() {
     this.state = 'GAMEPLAY';
     this.player.isDead = false;
-    if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+    this.player.invulnerable = false;
+    this.player.invulnerableTimer = 0;
+    if (this.sound && typeof this.sound.playBenchBell === 'function') this.sound.playBenchBell();
     const saveData = SaveSystem.load();
     this.world.loadRoom(saveData.lastBenchRoom || 'dirtmouth_01');
     this.player.x = saveData.lastBenchX || 700;
     this.player.y = saveData.lastBenchY || 580;
+    this.player.lastSafeX = this.player.x;
+    this.player.lastSafeY = this.player.y;
     this.player.masks = this.player.maxMasks;
     this.player.soul = this.player.maxSoul;
     if (this.world && typeof this.world.respawnEnemies === 'function') {
