@@ -87,12 +87,20 @@ export class Player extends Entity {
       desolateDive: false,
       howlingWraiths: false,
       superDash: false,
-      doubleJump: false
+      doubleJump: false,
+      soulOrbs: false
     };
 
     // Monarch Wings Double Jump State
     this.hasDoubleJumped = false;
     this.doubleJumpEffectTimer = 0;
+
+    // Soul Spiral (Soul Master Orbiting Orbs)
+    this.soulOrbsCount = 4;
+    this.maxSoulOrbs = 4;
+    this.soulOrbAngle = 0;
+    this.soulOrbRegenTimer = 0;
+    this.homingSoulBolts = [];
 
     // Charms & Modifiers
     this.equippedCharms = [];
@@ -150,6 +158,112 @@ export class Player extends Entity {
         proj.update(dt, tilemap, soundManager, particles);
         if (!proj.active) {
           this.spellProjectiles.splice(i, 1);
+        }
+      }
+    }
+
+    // Update Soul Spiral Orbiting Orbs & Homing Bolts
+    if (this.abilities.soulOrbs) {
+      this.soulOrbAngle += dt * 3.2;
+
+      // Passive regeneration of soul orbs (1 orb every 2.5s)
+      if (this.soulOrbsCount < this.maxSoulOrbs) {
+        this.soulOrbRegenTimer += dt;
+        if (this.soulOrbRegenTimer >= 2.5) {
+          this.soulOrbsCount++;
+          this.soulOrbRegenTimer = 0;
+          if (particles && particles.spawnHitSparks) {
+            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 6, '#88d6ff');
+          }
+        }
+      }
+
+      // Check contact damage against nearby active enemies
+      if (this.soulOrbsCount > 0 && tilemap && tilemap.enemies) {
+        for (let i = 0; i < this.soulOrbsCount; i++) {
+          const angle = this.soulOrbAngle + (i * Math.PI * 2 / this.maxSoulOrbs);
+          const orbX = this.x + this.width / 2 + Math.cos(angle) * 44;
+          const orbY = this.y + this.height / 2 + Math.sin(angle) * 32;
+          const orbBounds = { x: orbX - 10, y: orbY - 10, width: 20, height: 20 };
+
+          for (const enemy of tilemap.enemies) {
+            if (enemy && enemy.active && !enemy.isDead && Physics.rectIntersect(orbBounds, enemy.getBounds())) {
+              enemy.takeDamage(15, orbX, soundManager, particles, this);
+              this.soulOrbsCount--;
+              if (particles && particles.spawnShockwave) {
+                particles.spawnShockwave(orbX, orbY, 60, '#88d6ff');
+              }
+              if (particles && particles.spawnHitSparks) {
+                particles.spawnHitSparks(orbX, orbY, 10, '#ffffff');
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Update Homing Soul Bolts
+    if (this.homingSoulBolts) {
+      for (let i = this.homingSoulBolts.length - 1; i >= 0; i--) {
+        const bolt = this.homingSoulBolts[i];
+        bolt.life -= dt;
+        if (bolt.life <= 0 || !bolt.active) {
+          this.homingSoulBolts.splice(i, 1);
+          continue;
+        }
+
+        // Find nearest active enemy
+        let targetEnemy = null;
+        let minDist = 400;
+        if (tilemap && tilemap.enemies) {
+          for (const enemy of tilemap.enemies) {
+            if (enemy && enemy.active && !enemy.isDead) {
+              const dist = Math.hypot((enemy.x + enemy.width / 2) - bolt.x, (enemy.y + enemy.height / 2) - bolt.y);
+              if (dist < minDist) {
+                minDist = dist;
+                targetEnemy = enemy;
+              }
+            }
+          }
+        }
+
+        if (targetEnemy) {
+          const targetX = targetEnemy.x + targetEnemy.width / 2;
+          const targetY = targetEnemy.y + targetEnemy.height / 2;
+          const angle = Math.atan2(targetY - bolt.y, targetX - bolt.x);
+          bolt.vx += (Math.cos(angle) * 580 - bolt.vx) * dt * 8;
+          bolt.vy += (Math.sin(angle) * 580 - bolt.vy) * dt * 8;
+        }
+
+        bolt.x += bolt.vx * dt;
+        bolt.y += bolt.vy * dt;
+
+        if (particles && Math.random() < 0.4) {
+          particles.add({
+            x: bolt.x,
+            y: bolt.y,
+            vx: (Math.random() - 0.5) * 40,
+            vy: (Math.random() - 0.5) * 40,
+            size: 3,
+            color: '#88d6ff',
+            life: 0.2,
+            fade: true
+          });
+        }
+
+        // Hit check vs enemy
+        if (tilemap && tilemap.enemies) {
+          for (const enemy of tilemap.enemies) {
+            if (enemy && enemy.active && !enemy.isDead && Physics.rectIntersect({ x: bolt.x - 12, y: bolt.y - 12, width: 24, height: 24 }, enemy.getBounds())) {
+              enemy.takeDamage(20, bolt.x, soundManager, particles, this);
+              bolt.active = false;
+              if (particles && particles.spawnShockwave) {
+                particles.spawnShockwave(bolt.x, bolt.y, 70, '#88d6ff');
+              }
+              break;
+            }
+          }
         }
       }
     }
@@ -563,6 +677,20 @@ export class Player extends Entity {
 
     if (!this.spellProjectiles) this.spellProjectiles = [];
     this.spellProjectiles.push(proj);
+
+    // If Soul Spiral is active, launch a homing soul bolt
+    if (this.abilities.soulOrbs && this.soulOrbsCount > 0) {
+      this.soulOrbsCount--;
+      if (!this.homingSoulBolts) this.homingSoulBolts = [];
+      this.homingSoulBolts.push({
+        x: this.x + this.width / 2,
+        y: this.y + this.height / 2,
+        vx: this.facing * 450,
+        vy: -180,
+        life: 2.5,
+        active: true
+      });
+    }
 
     if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
     if (particles && particles.spawnShockwave) {
@@ -1000,7 +1128,60 @@ export class Player extends Entity {
       ctx.stroke();
     }
 
+    // 8. Soul Spiral - Ethereal Orbiting Soul Orbs
+    if (this.abilities.soulOrbs && this.soulOrbsCount > 0) {
+      ctx.save();
+      for (let i = 0; i < this.soulOrbsCount; i++) {
+        const angle = this.soulOrbAngle + (i * Math.PI * 2 / this.maxSoulOrbs);
+        const orbRelX = Math.cos(angle) * 44;
+        const orbRelY = Math.sin(angle) * 32;
+
+        // Outer ethereal cyan halo glow
+        const glowGrad = ctx.createRadialGradient(orbRelX, orbRelY, 1, orbRelX, orbRelY, 14);
+        glowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        glowGrad.addColorStop(0.4, 'rgba(120, 220, 255, 0.7)');
+        glowGrad.addColorStop(1, 'rgba(50, 160, 255, 0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(orbRelX, orbRelY, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner radiant pure white core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(orbRelX, orbRelY, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     ctx.restore();
     ctx.restore();
+
+    // 9. Draw Active Homing Soul Bolts (in World Screen Coordinates)
+    if (this.homingSoulBolts && this.homingSoulBolts.length > 0) {
+      const view = camera.getView();
+      for (const bolt of this.homingSoulBolts) {
+        if (!bolt.active) continue;
+        const bX = Math.round(bolt.x - view.x);
+        const bY = Math.round(bolt.y - view.y);
+
+        ctx.save();
+        const bGlow = ctx.createRadialGradient(bX, bY, 1, bX, bY, 18);
+        bGlow.addColorStop(0, '#ffffff');
+        bGlow.addColorStop(0.5, 'rgba(136, 214, 255, 0.85)');
+        bGlow.addColorStop(1, 'rgba(136, 214, 255, 0)');
+        ctx.fillStyle = bGlow;
+        ctx.beginPath();
+        ctx.arc(bX, bY, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(bX, bY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
   }
 }

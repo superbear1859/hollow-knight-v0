@@ -16,7 +16,8 @@ export class SaveSystem {
         desolateDive: false,
         howlingWraiths: false,
         superDash: false,
-        doubleJump: false
+        doubleJump: false,
+        soulOrbs: false
       },
       charmsOwned: ['WAYWARD_COMPASS'],
       charmsEquipped: ['WAYWARD_COMPASS'],

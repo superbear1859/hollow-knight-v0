@@ -560,11 +560,12 @@ export class Game {
           }
           if (enemy.bossName.includes('SOUL MASTER')) {
             this.bossesDefeated.soulMaster = true;
-            if (!this.player.abilities.desolateDive) {
-              const divePedestal = new AbilityUnlock(1600, 600, 'desolateDive', 'Desolate Dive (Spell)');
-              room.collectibles.push(divePedestal);
+            if (!this.player.abilities.soulOrbs) {
+              const orbPedestal = new AbilityUnlock(1600, 600, 'soulOrbs', 'Soul Spiral (Master\'s Soul Orbs)');
+              room.collectibles.push(orbPedestal);
               if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
               this.particles.spawnShockwave(1600, 600, 140, '#88d6ff');
+              this.particles.spawnHitSparks(1600, 600, 24, '#ffffff');
             }
           }
           if (enemy.bossName.includes('MANTIS LORDS')) {
