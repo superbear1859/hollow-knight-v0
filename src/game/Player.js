@@ -55,6 +55,7 @@ export class Player extends Entity {
     this.isAttacking = false;
     this.attackDirection = 'horizontal';
     this.attackHitbox = null;
+    this.attackKeyHeld = false;
 
     // Spells
     this.spellProjectiles = [];
@@ -445,10 +446,15 @@ export class Player extends Entity {
       this.castSpell(soundManager, particles, tilemap, input);
     }
 
-    // Nail Attack
+    // Nail Attack (Requires releasing the key before slashing again - no auto-swing when held!)
+    const isAttackDown = input && input.isDown('attack');
     const cooldown = this.hasCharm('QUICK_SLASH') ? this.attackCooldown * 0.6 : this.attackCooldown;
-    if (input.isJustPressed('attack') && this.attackTimer <= 0) {
+    if (input && input.isJustPressed('attack') && this.attackTimer <= 0 && !this.attackKeyHeld) {
       this.performAttack(input, soundManager, particles);
+      this.attackKeyHeld = true;
+    }
+    if (!isAttackDown) {
+      this.attackKeyHeld = false;
     }
 
     // Instant / Responsive Focus Healing

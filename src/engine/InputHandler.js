@@ -13,6 +13,8 @@ export class InputHandler {
         e.preventDefault();
       }
 
+      if (e.repeat) return; // Prevent OS key-repeat from triggering repeated justPressed events when holding a key
+
       if (e.key && e.key.length === 1) {
         this.secretBuffer = (this.secretBuffer + e.key.toLowerCase()).slice(-this.secretTarget.length);
         if (this.secretBuffer === this.secretTarget) {
