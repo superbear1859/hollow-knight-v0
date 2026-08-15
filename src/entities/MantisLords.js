@@ -5,8 +5,8 @@ export class MantisLords extends Enemy {
   constructor(x, y) {
     super(x, y, 36, 56, 50, 250);
     this.speed = 240;
-    this.state = 'IDLE'; // IDLE, DASH_ATTACK, WALL_CLING, DIVE_PLUNGE, DISC_THROW
-    this.stateTimer = 0.8;
+    this.state = 'GROUND_STANCE'; // GROUND_STANCE, DASH_ATTACK, WALL_CLING, DIVE_PLUNGE
+    this.stateTimer = 1.6; // Stays grounded on entry
     this.facing = -1;
     this.isBoss = true;
     this.bossName = 'MANTIS LORDS';
@@ -29,53 +29,63 @@ export class MantisLords extends Enemy {
 
     const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
 
-    if (this.state !== 'DASH_ATTACK') {
+    if (this.state === 'GROUND_STANCE' || this.state === 'IDLE') {
       this.facing = dx > 0 ? 1 : -1;
+      // Light ground pacing/stalking
+      this.vx = this.facing * 35;
     }
 
     // ----------------------------------------------------
-    // STATE MACHINE & ATTACKS
+    // STATE MACHINE & ATTACK SELECTION
     // ----------------------------------------------------
     if (this.stateTimer <= 0) {
-      const rand = Math.random();
-
-      if (rand < 0.35) {
-        // 1. DASH THRUST (High speed ground lunge)
-        this.state = 'DASH_ATTACK';
-        this.facing = dx > 0 ? 1 : -1;
-        this.vx = this.facing * 520;
-        this.vy = 0;
-        this.stateTimer = 0.7;
-        if (soundManager && soundManager.playDash) soundManager.playDash();
-        if (particles && particles.spawnHitSparks) {
-          particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height - 10, 8, '#ffffff');
-        }
-      } else if (rand < 0.70) {
-        // 2. WALL CLING & DISC THROW
-        this.state = 'WALL_CLING';
-        this.x = dx > 0 ? 80 : room.width - 120;
-        this.y = 240; // High on wall
+      if (this.state === 'DASH_ATTACK' || this.state === 'DIVE_PLUNGE' || this.state === 'WALL_CLING') {
+        // Always return to Ground Stance for prolonged ground presence (1.4 - 1.8s)
+        this.state = 'GROUND_STANCE';
+        this.stateTimer = 1.5;
         this.vx = 0;
-        this.vy = 0;
-        this.stateTimer = 1.4;
-
-        // Launch spinning mantis boomerang blade
-        this.discActive = true;
-        this.discX = this.x + this.width / 2;
-        this.discY = this.y + 20;
-        this.discVx = (dx > 0 ? 1 : -1) * 380;
-        this.discVy = 40;
-        this.discTimer = 1.6;
-        if (soundManager && soundManager.playSlash) soundManager.playSlash();
       } else {
-        // 3. AERIAL DIVE PLUNGE
-        this.state = 'DIVE_PLUNGE';
-        this.x = player.x + (Math.random() - 0.5) * 60;
-        this.y = 100;
-        this.vx = 0;
-        this.vy = 680;
-        this.stateTimer = 1.0;
-        if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        // Select next attack from Ground Stance
+        const rand = Math.random();
+
+        if (rand < 0.50) {
+          // 1. DASH THRUST (Ground Lunge across the arena)
+          this.state = 'DASH_ATTACK';
+          this.facing = dx > 0 ? 1 : -1;
+          this.vx = this.facing * 520;
+          this.vy = 0;
+          this.stateTimer = 0.75;
+          if (soundManager && soundManager.playDash) soundManager.playDash();
+          if (particles && particles.spawnHitSparks) {
+            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height - 10, 10, '#ffffff');
+          }
+        } else if (rand < 0.75) {
+          // 2. WALL CLING & BOOMERANG DISC THROW (Brief wall cling, then drops back to ground!)
+          this.state = 'WALL_CLING';
+          this.x = dx > 0 ? 80 : room.width - 120;
+          this.y = 220; // High on wall
+          this.vx = 0;
+          this.vy = 0;
+          this.stateTimer = 1.0;
+
+          // Launch spinning mantis boomerang blade
+          this.discActive = true;
+          this.discX = this.x + this.width / 2;
+          this.discY = this.y + 20;
+          this.discVx = (dx > 0 ? 1 : -1) * 380;
+          this.discVy = 40;
+          this.discTimer = 1.6;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        } else {
+          // 3. AERIAL DIVE PLUNGE (Plunges from above directly into ground)
+          this.state = 'DIVE_PLUNGE';
+          this.x = player.x + (Math.random() - 0.5) * 60;
+          this.y = 100;
+          this.vx = 0;
+          this.vy = 680;
+          this.stateTimer = 1.0;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        }
       }
     }
 
@@ -88,12 +98,14 @@ export class MantisLords extends Enemy {
       this.vy = 0;
     } else if (this.state === 'DIVE_PLUNGE') {
       if (this.grounded || this.y >= room.height - 180) {
-        this.state = 'IDLE';
-        this.stateTimer = 0.4;
+        // Land grounded in Ground Stance for prolonged vulnerability & sword stance (1.5s)
+        this.state = 'GROUND_STANCE';
+        this.stateTimer = 1.5;
         this.vy = 0;
+        this.vx = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
         if (particles && particles.spawnShockwave) {
-          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 100, '#aaffcc');
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 110, '#aaffcc');
         }
         if (camera && camera.shake) camera.shake(4, 0.15);
       }
@@ -140,47 +152,57 @@ export class MantisLords extends Enemy {
     ctx.translate(screenX + this.width / 2, screenY + this.height / 2);
     if (this.facing < 0) ctx.scale(-1, 1);
 
+    const groundBreathing = this.state === 'GROUND_STANCE' ? Math.sin(this.animTimer * 5) * 2 : 0;
+
     // Slender Mantis Body
     ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#283c2e';
     ctx.beginPath();
-    ctx.ellipse(0, 4, 10, 22, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 4 + groundBreathing, 10, 22, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Mantis Long Antennae / Crest Horns
     ctx.strokeStyle = '#8bc34a';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(2, -18);
-    ctx.lineTo(14, -36);
-    ctx.moveTo(-2, -18);
-    ctx.lineTo(-8, -34);
+    ctx.moveTo(2, -18 + groundBreathing);
+    ctx.lineTo(14, -36 + groundBreathing);
+    ctx.moveTo(-2, -18 + groundBreathing);
+    ctx.lineTo(-8, -34 + groundBreathing);
     ctx.stroke();
 
     // Mantis Lord White Mask
     ctx.fillStyle = '#f0f5ee';
     ctx.beginPath();
-    ctx.moveTo(0, -26);
-    ctx.lineTo(8, -14);
-    ctx.lineTo(0, -6);
-    ctx.lineTo(-8, -14);
+    ctx.moveTo(0, -26 + groundBreathing);
+    ctx.lineTo(8, -14 + groundBreathing);
+    ctx.lineTo(0, -6 + groundBreathing);
+    ctx.lineTo(-8, -14 + groundBreathing);
     ctx.closePath();
     ctx.fill();
 
     // Glowing Green Eye
     ctx.fillStyle = '#4caf50';
     ctx.beginPath();
-    ctx.arc(3, -14, 2.5, 0, Math.PI * 2);
+    ctx.arc(3, -14 + groundBreathing, 2.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Sharp Mantis Scythe Blades
+    // Sharp Mantis Scythe Blades (Poised in combat stance)
     ctx.fillStyle = '#b2dfdb';
     ctx.strokeStyle = '#e0f2f1';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(8, -4);
-    ctx.quadraticCurveTo(24, 6, 22, 28);
-    ctx.lineTo(14, 20);
-    ctx.quadraticCurveTo(16, 4, 8, -4);
+    if (this.state === 'GROUND_STANCE') {
+      // Poised forward sword stance
+      ctx.moveTo(8, -4 + groundBreathing);
+      ctx.quadraticCurveTo(28, 4, 30, 24);
+      ctx.lineTo(20, 20);
+      ctx.quadraticCurveTo(18, 2, 8, -4 + groundBreathing);
+    } else {
+      ctx.moveTo(8, -4);
+      ctx.quadraticCurveTo(24, 6, 22, 28);
+      ctx.lineTo(14, 20);
+      ctx.quadraticCurveTo(16, 4, 8, -4);
+    }
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
