@@ -438,17 +438,24 @@ export class Game {
       }
     }
 
-    // Check NPC Interactions
-    for (const npc of room.npcs) {
-      const dx = Math.abs((this.player.x + this.player.width / 2) - npc.x);
-      const dy = Math.abs((this.player.y + this.player.height / 2) - npc.y);
-      if (dx < 50 && dy < 50 && this.input.isJustPressed('interact')) {
-        if (npc.isShop) {
-          this.shopUI.open();
-          this.state = 'SHOP';
-        } else {
-          this.dialogueUI.open(npc.name, npc.dialogue);
-          this.state = 'DIALOGUE';
+    // Check NPC Interactions & Updates
+    if (room.npcs) {
+      for (const npc of room.npcs) {
+        if (typeof npc.update === 'function') {
+          npc.update(dt, this.player);
+        }
+        const isNear = typeof npc.isPlayerNear === 'function'
+          ? npc.isPlayerNear(this.player)
+          : (Math.abs((this.player.x + this.player.width / 2) - npc.x) < 50 && Math.abs((this.player.y + this.player.height / 2) - npc.y) < 50);
+
+        if (isNear && this.input.isJustPressed('interact')) {
+          if (npc.isShop) {
+            this.shopUI.open();
+            this.state = 'SHOP';
+          } else {
+            this.dialogueUI.open(npc.name, npc.dialogue);
+            this.state = 'DIALOGUE';
+          }
         }
       }
     }
@@ -633,11 +640,16 @@ export class Game {
 
     // 2. Draw NPCs, Benches & Stag Stations
     for (const npc of room.npcs) {
-      const view = this.camera.getView();
-      this.ctx.fillStyle = '#f0c040';
-      this.ctx.font = '12px Cinzel, serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.fillText(`${npc.name} [E]`, npc.x - view.x, npc.y - view.y - 10);
+      if (typeof npc.draw === 'function') {
+        const isNear = typeof npc.isPlayerNear === 'function' ? npc.isPlayerNear(this.player) : false;
+        npc.draw(this.ctx, this.camera, isNear);
+      } else {
+        const view = this.camera.getView();
+        this.ctx.fillStyle = '#f0c040';
+        this.ctx.font = '12px Cinzel, serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`${npc.name} [E]`, npc.x - view.x, npc.y - view.y - 10);
+      }
     }
 
     for (const bench of room.benches) {

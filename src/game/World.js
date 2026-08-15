@@ -8,6 +8,7 @@ import { Hornet } from '../entities/Hornet.js';
 import { CrumblingPlatform } from '../entities/CrumblingPlatform.js';
 import { BreakableWall } from '../entities/BreakableWall.js';
 import { VoidGate } from '../entities/VoidGate.js';
+import { NPC } from '../entities/NPC.js';
 import { Bench } from './Bench.js';
 import { StagStation } from './StagStation.js';
 import { AbilityUnlock, GeoCoin } from './Collectible.js';
@@ -178,8 +179,8 @@ export class World {
     dirtmouth.stagStations.push(new StagStation(600, 612, 'dirtmouth', 'Dirtmouth Town Station', 'dirtmouth_01'));
 
     dirtmouth.npcs.push(
-      { x: 550, y: 600, name: 'Elderbug', dialogue: "Welcome to Dirtmouth, traveler. Passages lead into the howling cliffs and caverns..." },
-      { x: 1400, y: 600, name: 'Sly', dialogue: "Ho ho! Looking to spend your Geo on fine Charms?", isShop: true }
+      new NPC(550, 616, 'Elderbug', "Welcome to Dirtmouth, traveler. Passages lead down into the howling caverns of Hallownest...", { type: 'elderbug' }),
+      new NPC(1400, 616, 'Sly', "Ho ho! Looking to spend your Geo on fine Charms? Step right up!", { type: 'sly', isShop: true })
     );
 
     dirtmouth.addDoor({
@@ -198,6 +199,10 @@ export class World {
     const crossroads1 = new Room('crossroads_01', 'Upper Forgotten Crossroads', 'crossroads', 120, 35);
     crossroads1.fillFrame(STONE);
     crossroads1.fillBox(1, 31, 118, 3, STONE);
+
+    crossroads1.npcs.push(
+      new NPC(750, 968, 'Quirrel', "Ah, a fellow wanderer! The architecture and solemn monuments in these caverns are marvelous, aren't they?", { type: 'quirrel' })
+    );
 
     crossroads1.addEnemy(new Crawlid(600, 930));
     crossroads1.addEnemy(new Crawlid(1400, 930));
@@ -223,6 +228,10 @@ export class World {
     const crossroads2 = new Room('crossroads_02', 'Lower Crossroads & Ancient Basin', 'ancient_basin', 110, 35);
     crossroads2.fillFrame(STONE);
     crossroads2.fillBox(1, 31, 108, 3, STONE);
+
+    crossroads2.npcs.push(
+      new NPC(650, 968, 'Cloth', "Ha! Let the beasts come! My mighty club is ready for whatever lurks in these dark depths!", { type: 'cloth' })
+    );
 
     crossroads2.benches.push(new Bench(400, 936, 'crossroads_02'));
     crossroads2.collectibles.push(new AbilityUnlock(1800, 936, 'desolateDive', 'Desolate Dive (Spell)'));
@@ -304,6 +313,9 @@ export class World {
     greenpath1.fillBox(89, 31, 40, 3, MOSS_STONE);
 
     greenpath1.stagStations.push(new StagStation(3800, 964, 'greenpath', 'Greenpath Canopy Station', 'greenpath_01'));
+    greenpath1.npcs.push(
+      new NPC(1100, 968, 'Cornifer', "Hmm hmm hmm... Greetings! I am Cornifer, charting these lush moss caverns. Keep your maps close, wanderer!", { type: 'cornifer' })
+    );
     greenpath1.addEnemy(new Crawlid(600, 930));
 
     greenpath1.addDoor({
