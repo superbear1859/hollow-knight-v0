@@ -129,8 +129,9 @@ export class Player extends Entity {
   }
 
   getNailDamage() {
-    const baseDamage = [0, 5, 9, 13, 17, 21][this.nailLevel] || 5;
-    const strengthMultiplier = this.hasCharm('FRAGILE_STRENGTH') || this.hasCharm('UNBREAKABLE_STRENGTH') ? 1.5 : 1.0;
+    // Balanced Nail Progression: +1 Damage per level (4 -> 5 -> 6 -> 7 -> 8)
+    const baseDamage = [0, 4, 5, 6, 7, 8][this.nailLevel] || 4;
+    const strengthMultiplier = this.hasCharm('FRAGILE_STRENGTH') || this.hasCharm('UNBREAKABLE_STRENGTH') ? 1.25 : 1.0;
     return Math.round(baseDamage * strengthMultiplier);
   }
 
@@ -142,10 +143,10 @@ export class Player extends Entity {
   getNailUpgradeCost() {
     const costs = [
       null,
-      { geo: 250, ore: 0, nextName: 'Sharpened Nail', nextDamage: 9 },
-      { geo: 800, ore: 1, nextName: 'Channeled Nail', nextDamage: 13 },
-      { geo: 1500, ore: 2, nextName: 'Coiled Nail', nextDamage: 17 },
-      { geo: 3000, ore: 3, nextName: 'Pure Nail', nextDamage: 21 }
+      { geo: 250, ore: 0, nextName: 'Sharpened Nail', nextDamage: 5 },
+      { geo: 800, ore: 1, nextName: 'Channeled Nail', nextDamage: 6 },
+      { geo: 1500, ore: 2, nextName: 'Coiled Nail', nextDamage: 7 },
+      { geo: 3000, ore: 3, nextName: 'Pure Nail', nextDamage: 8 }
     ];
     return costs[this.nailLevel] || null;
   }
