@@ -554,8 +554,13 @@ export class Game {
           }
           if (enemy.bossName.includes('MANTIS LORDS')) {
             this.bossesDefeated.mantisLords = true;
-            this.sound.playBossRoar();
-            this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#88ffaa');
+            if (!this.player.abilities.doubleJump) {
+              const wingPedestal = new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)');
+              room.collectibles.push(wingPedestal);
+              this.sound.playBossRoar();
+              this.particles.spawnShockwave(1600, 672, 140, '#88ffaa');
+              this.particles.spawnHitSparks(1600, 672, 24, '#ffffff');
+            }
           }
           if (enemy.bossName.includes('DUNG DEFENDER')) {
             this.bossesDefeated.dungDefender = true;
@@ -573,11 +578,19 @@ export class Game {
       // Player Attack vs Enemy Hitbox
       if (this.player.isAttacking && this.player.attackHitbox && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
         const isDownAttack = this.player.attackDirection === 'down';
-        const defeated = enemy.takeDamage(1, this.player.x, this.sound, this.particles, this.player);
-
         if (isDownAttack) {
           this.player.pogoBounce();
           this.sound.playPogo();
+        }
+        const defeated = enemy.takeDamage(1, this.player.x + this.player.width / 2, this.sound, this.particles, this.player);
+        if (defeated) {
+          const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
+          const coins = GeoCoin.createMultiDenominations(
+            enemy.x + enemy.width / 2,
+            enemy.y + enemy.height / 2,
+            geoVal
+          );
+          room.collectibles.push(...coins);
         }
       }
 
@@ -587,21 +600,41 @@ export class Game {
       }
     }
 
-    // Player Death Respawn Check
-    if (this.player.masks <= 0) {
-      this.sound.playBossRoar();
-      const saveData = SaveSystem.load();
-      this.world.loadRoom(saveData.lastBenchRoom || 'dirtmouth_01');
-      this.player.x = saveData.lastBenchX || 700;
-      this.player.y = saveData.lastBenchY || 580;
-      this.player.masks = this.player.maxMasks;
-      this.player.soul = this.player.maxSoul;
-      if (this.world && typeof this.world.respawnEnemies === 'function') {
-        this.world.respawnEnemies();
+    // Nail Slash vs Boss Arena Doors
+    if (this.player.isAttacking && this.player.attackHitbox && currentBoss) {
+      // Iron portcullis reflects nail attacks with sparks
+      for (const door of room.doors) {
+        if (Physics.rectIntersect(this.player.attackHitbox, door)) {
+          this.sound.playHit();
+          this.particles.spawnHitSparks(door.x + door.width / 2, door.y + door.height / 2, 8, '#ff4444');
+        }
       }
-      this.camera.setBounds(0, 0, this.world.currentRoom.width, this.world.currentRoom.height);
-      this.camera.snapTo(this.player.x, this.player.y);
     }
+
+    // Death / Respawn Check
+    if (this.player.masks <= 0 && this.state !== 'GAME_OVER') {
+      this.state = 'GAME_OVER';
+      this.sound.playHurt();
+      this.particles.spawnShockwave(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, 100, '#ff4444');
+      setTimeout(() => this.respawnAtBench(), 1200);
+    }
+  }
+
+  respawnAtBench() {
+    this.state = 'GAMEPLAY';
+    this.player.isDead = false;
+    this.sound.playBossRoar();
+    const saveData = SaveSystem.load();
+    this.world.loadRoom(saveData.lastBenchRoom || 'dirtmouth_01');
+    this.player.x = saveData.lastBenchX || 700;
+    this.player.y = saveData.lastBenchY || 580;
+    this.player.masks = this.player.maxMasks;
+    this.player.soul = this.player.maxSoul;
+    if (this.world && typeof this.world.respawnEnemies === 'function') {
+      this.world.respawnEnemies();
+    }
+    this.camera.setBounds(0, 0, this.world.currentRoom.width, this.world.currentRoom.height);
+    this.camera.snapTo(this.player.x, this.player.y);
   }
 
   transitionRoom(roomId, spawnX, spawnY) {
@@ -636,6 +669,14 @@ export class Game {
           if (!hasPedestal) {
             room.collectibles.push(new AbilityUnlock(550, 606, 'superDash', 'Crystal Heart (Super Dash - Hold [F])'));
           }
+        }
+      }
+
+      // Spawn Monarch Wings Pedestal ONLY if Mantis Lords has been defeated and ability is not yet unlocked
+      if (roomId === 'mantis_village' && this.bossesDefeated.mantisLords && !this.player.abilities.doubleJump) {
+        const hasPedestal = room.collectibles.some(c => c.abilityKey === 'doubleJump');
+        if (!hasPedestal) {
+          room.collectibles.push(new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)'));
         }
       }
 

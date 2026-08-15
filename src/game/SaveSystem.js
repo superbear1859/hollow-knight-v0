@@ -14,7 +14,9 @@ export class SaveSystem {
         wallJump: false,
         vengefulSpirit: false,
         desolateDive: false,
-        howlingWraiths: false
+        howlingWraiths: false,
+        superDash: false,
+        doubleJump: false
       },
       charmsOwned: ['WAYWARD_COMPASS'],
       charmsEquipped: ['WAYWARD_COMPASS'],
@@ -22,7 +24,10 @@ export class SaveSystem {
       visitedRooms: ['dirtmouth_01'],
       bossesDefeated: {
         falseKnight: false,
-        hornet: false
+        hornet: false,
+        soulMaster: false,
+        mantisLords: false,
+        dungDefender: false
       },
       lastBenchRoom: 'dirtmouth_01',
       lastBenchX: 700,

@@ -84,8 +84,13 @@ export class Player extends Entity {
       vengefulSpirit: false,
       desolateDive: false,
       howlingWraiths: false,
-      superDash: false
+      superDash: false,
+      doubleJump: false
     };
+
+    // Monarch Wings Double Jump State
+    this.hasDoubleJumped = false;
+    this.doubleJumpEffectTimer = 0;
 
     // Charms & Modifiers
     this.equippedCharms = [];
@@ -108,22 +113,17 @@ export class Player extends Entity {
   }
 
   update(dt, input, soundManager, particles, tilemap, camera) {
-    super.update(dt);
     this.animTimer += dt;
+    if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
+    else this.invulnerable = false;
 
-    if (this.focusPromptTimer > 0) this.focusPromptTimer -= dt;
     if (this.healCooldownTimer > 0) this.healCooldownTimer -= dt;
-
-    if (this.invulnerableTimer > 0) {
-      this.invulnerableTimer -= dt;
-      if (this.invulnerableTimer <= 0) {
-        this.invulnerable = false;
-      }
-    }
-
+    if (this.focusPromptTimer > 0) this.focusPromptTimer -= dt;
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
     if (this.shadowDashCooldownTimer > 0) this.shadowDashCooldownTimer -= dt;
+    if (this.attackTimer > 0) this.attackTimer -= dt;
     if (this.wallJumpTimer > 0) this.wallJumpTimer -= dt;
+    if (this.doubleJumpEffectTimer > 0) this.doubleJumpEffectTimer -= dt;
 
     if (this.shriekTimer > 0) {
       this.shriekTimer -= dt;
@@ -297,6 +297,7 @@ export class Player extends Entity {
     if (this.grounded || this.isWallSliding) {
       this.coyoteTimer = 0.12; // 120ms coyote time window
       this.hasAirDashed = false; // Reset midair dash state upon touching ground or wall sliding!
+      this.hasDoubleJumped = false; // Reset double jump state upon touching ground or wall sliding!
     } else {
       if (this.coyoteTimer > 0) this.coyoteTimer -= dt;
     }
@@ -308,7 +309,7 @@ export class Player extends Entity {
       this.jumpBufferTimer -= dt;
     }
 
-    // Execute Jump / Wall Jump
+    // Execute Jump / Wall Jump / Monarch Wings Double Jump
     if (this.jumpBufferTimer > 0) {
       const onWall = (this.onLeftWall || this.onRightWall) && !this.grounded;
       if (onWall && this.abilities.wallJump) {
@@ -319,6 +320,7 @@ export class Player extends Entity {
         this.wallJumpTimer = 0.24; // 240ms steering lockout away from wall
         this.coyoteTimer = 0;
         this.jumpBufferTimer = 0;
+        this.hasDoubleJumped = false; // Reset double jump on wall bounce!
         soundManager.playSlash();
         particles.spawnDust(this.x + (this.onLeftWall ? 0 : this.width), this.y + this.height / 2, 8);
       } else if (this.grounded || this.coyoteTimer > 0) {
@@ -327,6 +329,19 @@ export class Player extends Entity {
         this.jumpBufferTimer = 0;
         soundManager.playSlash();
         particles.spawnDust(this.x + this.width / 2, this.y + this.height, 6);
+      } else if (this.abilities.doubleJump && !this.hasDoubleJumped && !this.isWallSliding) {
+        // MONARCH WINGS DOUBLE JUMP (Mid-Air Leap)
+        this.hasDoubleJumped = true;
+        this.vy = this.jumpForce * 0.92; // -525px/s high ethereal leap
+        this.jumpBufferTimer = 0;
+        this.doubleJumpEffectTimer = 0.35;
+        if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        if (particles && particles.spawnShockwave) {
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height - 4, 70, '#eaf4ff');
+        }
+        if (particles && particles.spawnHitSparks) {
+          particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height - 8, 12, '#ffffff');
+        }
       }
     }
 
@@ -593,6 +608,8 @@ export class Player extends Entity {
   pogoBounce() {
     this.vy = -380; // Energetic upward pogo bounce
     this.coyoteTimer = 0.12;
+    this.hasAirDashed = false;
+    this.hasDoubleJumped = false; // Reset double jump on nail pogo strike!
   }
 
   performAttack(input, soundManager, particles) {
@@ -854,6 +871,35 @@ export class Player extends Entity {
     } else {
       ctx.fillRect(-6, 12, 4, 5);
       ctx.fillRect(2, 12, 4, 5);
+    }
+
+    // Radiant Monarch Wings Double Jump Flap Effect
+    if (this.doubleJumpEffectTimer > 0) {
+      const wingAlpha = Math.min(1, this.doubleJumpEffectTimer / 0.35);
+      const wingSpread = (1 - (this.doubleJumpEffectTimer / 0.35)) * 14;
+      ctx.save();
+      ctx.fillStyle = `rgba(235, 245, 255, ${wingAlpha * 0.75})`;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${wingAlpha * 0.9})`;
+      ctx.lineWidth = 1.5;
+
+      // Left Monarch Wing
+      ctx.beginPath();
+      ctx.moveTo(-4, 0);
+      ctx.quadraticCurveTo(-22 - wingSpread, -24, -28 - wingSpread, -10);
+      ctx.quadraticCurveTo(-24 - wingSpread, 12, -4, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Right Monarch Wing
+      ctx.beginPath();
+      ctx.moveTo(4, 0);
+      ctx.quadraticCurveTo(22 + wingSpread, -24, 28 + wingSpread, -10);
+      ctx.quadraticCurveTo(24 + wingSpread, 12, 4, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
     }
 
     // 3. Flowing Vessel Cloak (Animated Bezier Wave)

@@ -11,6 +11,7 @@ export class AbilityCheatUI {
       { id: 'desolateDive', name: 'Desolate Dive (Spell)', desc: 'Slam downward to create a massive AoE shockwave explosion (Costs 3 Soul)' },
       { id: 'howlingWraiths', name: 'Howling Wraiths (Spell)', desc: 'Release a towering upward eruption of screaming soul phantoms (Costs 3 Soul)' },
       { id: 'superDash', name: 'Crystal Heart (Super Dash - Hold [F])', desc: 'Hold [F] to charge and fly forward horizontally without stopping' },
+      { id: 'doubleJump', name: 'Monarch Wings (Double Jump)', desc: 'Leap a second time in mid-air with glowing radiant wings' },
       { id: 'unlockAll', name: '✦ UNLOCK ALL ABILITIES ✦', desc: 'Instantly grant all Metroidvania movement & spell powers' },
       { id: 'confirm', name: '✓ APPLY & RETURN TO GAME', desc: 'Save selected abilities and resume exploration' }
     ];
@@ -186,6 +187,7 @@ export class AbilityCheatUI {
       this.player.abilities.desolateDive = true;
       this.player.abilities.howlingWraiths = true;
       this.player.abilities.superDash = true;
+      this.player.abilities.doubleJump = true;
       if (soundManager && soundManager.playBenchBell) soundManager.playBenchBell();
     } else if (opt.id === 'confirm') {
       if (soundManager && soundManager.playBenchBell) soundManager.playBenchBell();
