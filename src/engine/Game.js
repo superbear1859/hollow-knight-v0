@@ -58,7 +58,13 @@ export class Game {
     if (saveData.visitedRooms) {
       saveData.visitedRooms.forEach(r => this.visitedRooms.add(r));
     }
-    this.bossesDefeated = saveData.bossesDefeated || { falseKnight: false, hornet: false };
+    this.bossesDefeated = saveData.bossesDefeated || {
+      falseKnight: false,
+      hornet: false,
+      soulMaster: false,
+      mantisLords: false,
+      dungDefender: false
+    };
 
     this.world.loadRoom(saveData.lastBenchRoom || 'dirtmouth_01');
     this.camera.setBounds(0, 0, this.world.currentRoom.width, this.world.currentRoom.height);
@@ -147,7 +153,11 @@ export class Game {
       boss_hornet: { x: 400, y: 480 },
       fog_canyon: { x: 300, y: 900 },
       city_of_tears: { x: 2200, y: 900 },
-      deepnest: { x: 600, y: 900 }
+      deepnest: { x: 600, y: 900 },
+      soul_sanctum: { x: 400, y: 640 },
+      mantis_village: { x: 350, y: 670 },
+      royal_waterways: { x: 450, y: 730 },
+      the_abyss: { x: 1600, y: 960 }
     };
 
     const spawn = safeSpawns[roomId] || { x: room.width / 2, y: room.height - 180 };
@@ -532,6 +542,25 @@ export class Game {
               this.particles.spawnShockwave(550, 606, 140, '#ff66cc');
               this.particles.spawnHitSparks(550, 606, 24, '#ff66cc');
             }
+          }
+          if (enemy.bossName.includes('SOUL MASTER')) {
+            this.bossesDefeated.soulMaster = true;
+            if (!this.player.abilities.desolateDive) {
+              const divePedestal = new AbilityUnlock(1600, 600, 'desolateDive', 'Desolate Dive (Spell)');
+              room.collectibles.push(divePedestal);
+              this.sound.playBossRoar();
+              this.particles.spawnShockwave(1600, 600, 140, '#88d6ff');
+            }
+          }
+          if (enemy.bossName.includes('MANTIS LORDS')) {
+            this.bossesDefeated.mantisLords = true;
+            this.sound.playBossRoar();
+            this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#88ffaa');
+          }
+          if (enemy.bossName.includes('DUNG DEFENDER')) {
+            this.bossesDefeated.dungDefender = true;
+            this.sound.playBossRoar();
+            this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#d7ccc8');
           }
         }
       }

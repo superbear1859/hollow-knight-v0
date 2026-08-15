@@ -5,6 +5,9 @@ import { HuskSentinel } from '../entities/HuskSentinel.js';
 import { MantisGuard } from '../entities/MantisGuard.js';
 import { FalseKnight } from '../entities/FalseKnight.js';
 import { Hornet } from '../entities/Hornet.js';
+import { SoulMaster } from '../entities/SoulMaster.js';
+import { MantisLords } from '../entities/MantisLords.js';
+import { DungDefender } from '../entities/DungDefender.js';
 import { CrumblingPlatform } from '../entities/CrumblingPlatform.js';
 import { BreakableWall } from '../entities/BreakableWall.js';
 import { VoidGate } from '../entities/VoidGate.js';
@@ -257,6 +260,10 @@ export class World {
       x: 2680, y: 980, width: 160, height: 140,
       targetRoomId: 'city_of_tears', targetX: 540, targetY: 120
     });
+    crossroads2.addDoor({
+      x: 1000, y: 980, width: 160, height: 140,
+      targetRoomId: 'the_abyss', targetX: 800, targetY: 100
+    });
     this.rooms['crossroads_02'] = crossroads2;
 
     // ----------------------------------------------------
@@ -346,6 +353,10 @@ export class World {
     greenpath2.addDoor({
       x: 0, y: 920, width: 70, height: 90,
       targetRoomId: 'boss_hornet', targetX: 80, targetY: 540
+    });
+    greenpath2.addDoor({
+      x: 2200, y: 980, width: 160, height: 140,
+      targetRoomId: 'mantis_village', targetX: 100, targetY: 650
     });
     this.rooms['greenpath_02'] = greenpath2;
 
@@ -447,6 +458,18 @@ export class World {
       x: 4240, y: 920, width: 70, height: 90,
       targetRoomId: 'deepnest', targetX: 3700, targetY: 920
     });
+
+    // East Door to Soul Sanctum
+    cityOfTears.addDoor({
+      x: 4240, y: 300, width: 70, height: 90,
+      targetRoomId: 'soul_sanctum', targetX: 80, targetY: 620
+    });
+
+    // Floor Grate Door to Royal Waterways
+    cityOfTears.addDoor({
+      x: 1600, y: 980, width: 160, height: 140,
+      targetRoomId: 'royal_waterways', targetX: 1400, targetY: 100
+    });
     this.rooms['city_of_tears'] = cityOfTears;
 
     // ----------------------------------------------------
@@ -465,7 +488,112 @@ export class World {
       x: 3760, y: 920, width: 70, height: 90,
       targetRoomId: 'city_of_tears', targetX: 4100, targetY: 920
     });
+    deepnest.addDoor({
+      x: 0, y: 920, width: 70, height: 90,
+      targetRoomId: 'mantis_village', targetX: 2550, targetY: 650
+    });
+    deepnest.addDoor({
+      x: 2400, y: 980, width: 160, height: 140,
+      targetRoomId: 'the_abyss', targetX: 3350, targetY: 920
+    });
     this.rooms['deepnest'] = deepnest;
+
+    // ----------------------------------------------------
+    // ROOM 13: SOUL SANCTUM (80x25 = 2560px x 800px)
+    // ----------------------------------------------------
+    const soulSanctum = new Room('soul_sanctum', 'Soul Sanctum - Soul Master', 'soul_sanctum', 80, 25);
+    soulSanctum.fillFrame(CITY_STONE);
+    soulSanctum.fillBox(1, 21, 78, 3, CITY_STONE);
+    soulSanctum.fillBox(20, 16, 12, 1, CITY_STONE);
+    soulSanctum.fillBox(48, 16, 12, 1, CITY_STONE);
+    soulSanctum.fillBox(34, 11, 12, 1, CITY_STONE);
+
+    soulSanctum.benches.push(new Bench(400, 640, 'soul_sanctum'));
+    soulSanctum.addEnemy(new SoulMaster(1600, 420));
+
+    soulSanctum.addDoor({
+      x: 0, y: 620, width: 70, height: 90,
+      targetRoomId: 'city_of_tears', targetX: 4160, targetY: 300
+    });
+    soulSanctum.addDoor({
+      x: 2480, y: 620, width: 70, height: 90,
+      targetRoomId: 'royal_waterways', targetX: 100, targetY: 700
+    });
+    this.rooms['soul_sanctum'] = soulSanctum;
+
+    // ----------------------------------------------------
+    // ROOM 14: MANTIS VILLAGE & THRONE (85x26 = 2720px x 832px)
+    // ----------------------------------------------------
+    const mantisVillage = new Room('mantis_village', 'Mantis Village & Throne - Mantis Lords', 'mantis_village', 85, 26);
+    mantisVillage.fillFrame(MOSS_STONE);
+    mantisVillage.fillBox(1, 22, 83, 3, MOSS_STONE);
+    mantisVillage.fillBox(16, 17, 10, 1, MOSS_STONE);
+    mantisVillage.fillBox(58, 17, 10, 1, MOSS_STONE);
+
+    mantisVillage.benches.push(new Bench(350, 672, 'mantis_village'));
+    mantisVillage.addEnemy(new MantisGuard(700, 660));
+    mantisVillage.addEnemy(new MantisLords(1600, 500));
+
+    mantisVillage.addDoor({
+      x: 0, y: 650, width: 70, height: 90,
+      targetRoomId: 'greenpath_02', targetX: 2200, targetY: 900
+    });
+    mantisVillage.addDoor({
+      x: 2640, y: 650, width: 70, height: 90,
+      targetRoomId: 'deepnest', targetX: 80, targetY: 920
+    });
+    this.rooms['mantis_village'] = mantisVillage;
+
+    // ----------------------------------------------------
+    // ROOM 15: ROYAL WATERWAYS (95x28 = 3040px x 896px)
+    // ----------------------------------------------------
+    const royalWaterways = new Room('royal_waterways', 'Royal Waterways - Dung Defender', 'royal_waterways', 95, 28);
+    royalWaterways.fillFrame(STONE);
+    royalWaterways.fillBox(1, 24, 93, 3, STONE);
+    royalWaterways.fillBox(24, 18, 14, 1, STONE);
+    royalWaterways.fillBox(56, 18, 14, 1, STONE);
+
+    royalWaterways.benches.push(new Bench(450, 736, 'royal_waterways'));
+    royalWaterways.addEnemy(new DungDefender(1750, 620));
+
+    royalWaterways.addDoor({
+      x: 0, y: 700, width: 70, height: 90,
+      targetRoomId: 'soul_sanctum', targetX: 2400, targetY: 620
+    });
+    royalWaterways.addDoor({
+      x: 2960, y: 700, width: 70, height: 90,
+      targetRoomId: 'the_abyss', targetX: 100, targetY: 800
+    });
+    royalWaterways.addDoor({
+      x: 1400, y: 0, width: 160, height: 100,
+      targetRoomId: 'city_of_tears', targetX: 1600, targetY: 900
+    });
+    this.rooms['royal_waterways'] = royalWaterways;
+
+    // ----------------------------------------------------
+    // ROOM 16: THE ABYSS & ANCIENT BASIN DEPTHS (110x35 = 3520px x 1120px)
+    // ----------------------------------------------------
+    const theAbyss = new Room('the_abyss', 'The Ancient Abyss & Void Depths', 'the_abyss', 110, 35);
+    theAbyss.fillFrame(DEEP_STONE);
+    theAbyss.fillBox(1, 31, 108, 3, DEEP_STONE);
+
+    theAbyss.benches.push(new Bench(1600, 968, 'the_abyss'));
+    theAbyss.stagStations.push(new StagStation(1750, 964, 'the_abyss', 'Abyss Ancient Terminal', 'the_abyss'));
+    theAbyss.collectibles.push(new AbilityUnlock(2800, 936, 'shadowDash', 'Shade Cloak (Shadow Dash)'));
+
+    theAbyss.addDoor({
+      x: 0, y: 800, width: 70, height: 90,
+      targetRoomId: 'royal_waterways', targetX: 2880, targetY: 700
+    });
+    theAbyss.addDoor({
+      x: 800, y: 0, width: 160, height: 100,
+      targetRoomId: 'crossroads_02', targetX: 1000, targetY: 900
+    });
+    theAbyss.addDoor({
+      x: 3440, y: 920, width: 70, height: 90,
+      targetRoomId: 'deepnest', targetX: 2350, targetY: 920
+    });
+    this.rooms['the_abyss'] = theAbyss;
 
     this.currentRoom = this.rooms['dirtmouth_01'];
   }
@@ -508,6 +636,14 @@ export class World {
       ctx.fillStyle = '#071220';
     } else if (this.currentRoom.biome === 'deepnest') {
       ctx.fillStyle = '#040406';
+    } else if (this.currentRoom.biome === 'soul_sanctum') {
+      ctx.fillStyle = '#121026';
+    } else if (this.currentRoom.biome === 'mantis_village') {
+      ctx.fillStyle = '#141f16';
+    } else if (this.currentRoom.biome === 'royal_waterways') {
+      ctx.fillStyle = '#0e1814';
+    } else if (this.currentRoom.biome === 'the_abyss') {
+      ctx.fillStyle = '#020204';
     }
     ctx.fillRect(0, 0, view.width, view.height);
 

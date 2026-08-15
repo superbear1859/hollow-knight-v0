@@ -46,20 +46,24 @@ export class MapUI {
 
     const cx = width / 2;
 
-    // 12 Room Node Positions with Ability & Gate Indicators
+    // 16 Room Node Positions with Ability & Gate Indicators
     const mapNodes = [
-      { id: 'kings_pass', name: "King's Pass", x: cx - 220, y: 110, color: '#3a4a5e', info: 'Tutorial Caverns' },
-      { id: 'dirtmouth_01', name: 'Dirtmouth Town', x: cx, y: 110, color: '#4a607a', info: 'Bench Sanctuary' },
-      { id: 'crossroads_01', name: 'Upper Crossroads', x: cx, y: 190, color: '#3a5078', info: 'Ancestral Path' },
-      { id: 'boss_false_knight', name: 'Ancestral Mound', x: cx + 220, y: 190, color: '#7a3038', info: '🔮 Vengeful Spirit (Spell)' },
-      { id: 'crystal_peak', name: 'Crystal Peak Mines', x: cx + 260, y: 280, color: '#5a205c', info: '🧗 Mantis Claw (Wall Jump)' },
-      { id: 'crossroads_02', name: 'Lower Crossroads', x: cx, y: 280, color: '#3a5078', info: 'Stag Station & Bench' },
-      { id: 'greenpath_01', name: 'Greenpath Caverns', x: cx - 220, y: 280, color: '#2a6a48', info: 'Acid Pogo Gaps' },
-      { id: 'greenpath_02', name: 'Fungal Wastes', x: cx - 360, y: 280, color: '#2a6a48', info: '🦋 Mothwing Cloak (Dash)' },
-      { id: 'boss_hornet', name: 'Hornet Sanctuary', x: cx - 360, y: 370, color: '#9a2a38', info: 'Boss: Hornet' },
-      { id: 'fog_canyon', name: 'Fog Canyon Archives', x: cx - 220, y: 380, color: '#2a5a58', info: 'Acid Chasms' },
-      { id: 'deepnest', name: 'Deepnest Caverns', x: cx - 220, y: 470, color: '#241a2c', info: '🌑 Shade Cloak (Shadow Dash)' },
-      { id: 'city_of_tears', name: 'City of Tears Outskirts', x: cx + 80, y: 400, color: '#204064', info: '600px Wall Climb Shaft' }
+      { id: 'kings_pass', name: "King's Pass", x: cx - 240, y: 100, color: '#3a4a5e', info: 'Tutorial Caverns' },
+      { id: 'dirtmouth_01', name: 'Dirtmouth Town', x: cx, y: 100, color: '#4a607a', info: 'Bench Sanctuary' },
+      { id: 'crossroads_01', name: 'Upper Crossroads', x: cx, y: 175, color: '#3a5078', info: 'Ancestral Path' },
+      { id: 'boss_false_knight', name: 'Ancestral Mound', x: cx + 240, y: 175, color: '#7a3038', info: '🔮 Boss: False Knight' },
+      { id: 'crystal_peak', name: 'Crystal Peak Mines', x: cx + 260, y: 255, color: '#5a205c', info: '🧗 Mantis Claw (Wall Jump)' },
+      { id: 'crossroads_02', name: 'Lower Crossroads', x: cx, y: 255, color: '#3a5078', info: 'Stag Station & Bench' },
+      { id: 'greenpath_01', name: 'Greenpath Caverns', x: cx - 240, y: 255, color: '#2a6a48', info: 'Acid Pogo Gaps' },
+      { id: 'greenpath_02', name: 'Fungal Wastes', x: cx - 380, y: 255, color: '#2a6a48', info: '🦋 Mothwing Cloak (Dash)' },
+      { id: 'boss_hornet', name: 'Hornet Sanctuary', x: cx - 380, y: 340, color: '#9a2a38', info: '🗡️ Boss: Hornet' },
+      { id: 'mantis_village', name: 'Mantis Village', x: cx - 380, y: 430, color: '#244830', info: '👑 Boss: Mantis Lords' },
+      { id: 'fog_canyon', name: 'Fog Canyon Archives', x: cx - 240, y: 340, color: '#2a5a58', info: 'Acid Chasms' },
+      { id: 'deepnest', name: 'Deepnest Caverns', x: cx - 240, y: 430, color: '#241a2c', info: '🌑 Shade Cloak (Shadow Dash)' },
+      { id: 'city_of_tears', name: 'City of Tears', x: cx + 80, y: 340, color: '#204064', info: '600px Wall Climb Shaft' },
+      { id: 'soul_sanctum', name: 'Soul Sanctum', x: cx + 260, y: 340, color: '#3a2058', info: '✨ Boss: Soul Master' },
+      { id: 'royal_waterways', name: 'Royal Waterways', x: cx + 80, y: 430, color: '#283c2a', info: '💩 Boss: Dung Defender' },
+      { id: 'the_abyss', name: 'The Ancient Abyss', x: cx - 80, y: 490, color: '#10141a', info: 'Void Heart & Terminal' }
     ];
 
     // Node Connections
@@ -74,12 +78,20 @@ export class MapUI {
       ['crossroads_02', 'greenpath_01'],
       ['greenpath_01', 'greenpath_02'],
       ['greenpath_02', 'boss_hornet'],
+      ['greenpath_02', 'mantis_village'],
+      ['mantis_village', 'deepnest'],
       ['boss_hornet', 'fog_canyon'],
       ['greenpath_01', 'fog_canyon'],
       ['fog_canyon', 'deepnest'],
       ['deepnest', 'city_of_tears'],
       ['fog_canyon', 'city_of_tears'],
-      ['crossroads_02', 'city_of_tears']
+      ['crossroads_02', 'city_of_tears'],
+      ['city_of_tears', 'soul_sanctum'],
+      ['soul_sanctum', 'royal_waterways'],
+      ['city_of_tears', 'royal_waterways'],
+      ['royal_waterways', 'the_abyss'],
+      ['crossroads_02', 'the_abyss'],
+      ['deepnest', 'the_abyss']
     ];
 
     // Draw Line Connections

@@ -8,7 +8,8 @@ export class StagUI {
       { id: 'crossroads', name: 'Crossroads Basin Station', roomId: 'crossroads_02', x: 1500, y: 944 },
       { id: 'greenpath', name: 'Greenpath Canopy Station', roomId: 'greenpath_01', x: 3800, y: 944 },
       { id: 'city_of_tears', name: 'City of Tears Central Station', roomId: 'city_of_tears', x: 2100, y: 944 },
-      { id: 'deepnest', name: 'Deepnest Distant Village Station', roomId: 'deepnest', x: 600, y: 944 }
+      { id: 'deepnest', name: 'Deepnest Distant Village Station', roomId: 'deepnest', x: 600, y: 944 },
+      { id: 'the_abyss', name: 'Abyss Ancient Terminal Station', roomId: 'the_abyss', x: 1750, y: 944 }
     ];
   }
 
