@@ -190,15 +190,19 @@ export class Player extends Entity {
         if (soundManager && soundManager.playSlash) soundManager.playSlash();
       }
 
+      // Reset wall flags before collision check
+      this.onLeftWall = false;
+      this.onRightWall = false;
       Physics.checkTileCollision(this, tilemap, dt);
 
-      // Cancel Super Dash if player hits a wall in front (Only check after 0.3s delay to clear launching wall!)
-      if (this.superDashTimer >= 0.3 && (this.onLeftWall || this.onRightWall)) {
+      // Cancel Super Dash ONLY if player hits a solid wall IN FRONT in the direction of flight
+      const hitWallAhead = (this.superDashDir > 0 && this.onRightWall) || (this.superDashDir < 0 && this.onLeftWall);
+      if (hitWallAhead) {
         this.isSuperDashing = false;
         this.vx = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
         if (particles && particles.spawnHitSparks) {
-          particles.spawnHitSparks(this.x + (this.onLeftWall ? 0 : this.width), this.y + this.height / 2, 16, '#ff66cc');
+          particles.spawnHitSparks(this.x + (this.superDashDir > 0 ? this.width : 0), this.y + this.height / 2, 16, '#ff66cc');
         }
         if (camera && camera.shake) camera.shake(4, 0.18);
       }
@@ -397,12 +401,16 @@ export class Player extends Entity {
       // Key released or no longer grounded/wall-sliding
       if (this.superDashChargeTimer >= 0.35) {
         // Launch Super Dash!
+        const launchDir = this.isWallSliding ? (this.onLeftWall ? 1 : -1) : this.facing;
         this.isSuperDashing = true;
         this.isChargingSuperDash = false;
+        this.isWallSliding = false;
+        this.onLeftWall = false;
+        this.onRightWall = false;
         this.superDashTimer = 0;
-        this.superDashDir = this.isWallSliding ? (this.onLeftWall ? 1 : -1) : this.facing;
-        this.facing = this.superDashDir;
-        this.vx = this.superDashDir * 750;
+        this.superDashDir = launchDir;
+        this.facing = launchDir;
+        this.vx = launchDir * 750;
         this.vy = 0;
         this.invulnerable = true;
         this.invulnerableTimer = 0.3;
