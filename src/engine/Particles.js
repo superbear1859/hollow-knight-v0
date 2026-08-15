@@ -4,6 +4,10 @@ export class Particles {
   }
 
   add(p) {
+    // Keep particle array size bounded to prevent any accumulation
+    if (this.particles.length > 180) {
+      this.particles.splice(0, 40);
+    }
     this.particles.push({
       x: p.x,
       y: p.y,
@@ -13,7 +17,7 @@ export class Particles {
       color: p.color || '#ffffff',
       alpha: p.alpha ?? 1,
       life: p.life || 0.5,
-      maxLife: p.life || 0.5,
+      maxLife: p.maxLife || p.life || 0.5,
       shape: p.shape || 'circle',
       angle: p.angle || 0,
       scaleX: p.scaleX || 1,
@@ -31,35 +35,42 @@ export class Particles {
   }
 
   spawnSlashArc(x, y, direction, isUp, isDown, isLongnail = false) {
+    // Remove any previous lingering slash arcs so slashes never stack or persist
+    this.particles = this.particles.filter(p => p.shape !== 'slash');
+
     const scale = isLongnail ? 1.5 : 1.0;
-    const baseSize = 85 * scale; // Long razor-thin swing size
+    const baseSize = 85 * scale; // Sleek razor-thin swing size
 
     this.add({
       x, y,
-      vx: direction * 60,
-      vy: isUp ? -90 : (isDown ? 90 : 0),
+      vx: direction * 40,
+      vy: isUp ? -60 : (isDown ? 60 : 0),
       size: baseSize,
       color: '#eaf4ff',
-      life: 0.16,
+      life: 0.10,
+      maxLife: 0.10,
       shape: 'slash',
       angle: isUp ? -Math.PI / 2 : (isDown ? Math.PI / 2 : (direction < 0 ? Math.PI : 0)),
       scaleX: scale,
-      scaleY: scale
+      scaleY: scale,
+      fade: true
     });
 
-    // Add extra thin white & cyan sparks along the sleek long arc
-    for (let i = 0; i < 10; i++) {
+    // Add crisp transient sparks that dissipate rapidly (0.08s)
+    for (let i = 0; i < 5; i++) {
       const angle = (Math.random() - 0.5) * Math.PI * 0.9 + (direction > 0 ? 0 : Math.PI);
-      const speed = Math.random() * 260 + 100;
+      const speed = Math.random() * 200 + 80;
       this.add({
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         size: Math.random() * 2 + 1,
         color: i % 2 === 0 ? '#ffffff' : '#88d6ff',
-        life: Math.random() * 0.2 + 0.08,
-        gravity: 100,
-        shape: 'spark'
+        life: Math.random() * 0.08 + 0.04,
+        maxLife: 0.12,
+        gravity: 80,
+        shape: 'spark',
+        fade: true
       });
     }
   }
@@ -163,6 +174,10 @@ export class Particles {
         p.alpha = Math.max(0, p.life / p.maxLife);
       }
     }
+  }
+
+  clear() {
+    this.particles = [];
   }
 
   draw(ctx, camera) {
