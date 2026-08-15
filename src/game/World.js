@@ -377,6 +377,9 @@ export class World {
     fogCanyon.fillBox(51, 31, 10, 3, ACID);
     fogCanyon.fillBox(61, 31, 48, 3, MOSS_STONE);
 
+    // Platforming bypass over secret Void Gate
+    fogCanyon.fillBox(70, 22, 12, 1, MOSS_STONE);
+    fogCanyon.fillBox(74, 16, 6, 1, MOSS_STONE);
     fogCanyon.voidGates.push(new VoidGate(2400, 800, 32, 192));
 
     fogCanyon.addDoor({
@@ -396,15 +399,50 @@ export class World {
     cityOfTears.fillFrame(CITY_STONE);
     cityOfTears.fillBox(1, 31, 133, 3, CITY_STONE);
 
+    // Grand Elevator Shaft to Crossroads (x = 440 to 640)
+    cityOfTears.fillBox(13, 1, 2, 29, CITY_STONE); // Left shaft wall
+    cityOfTears.fillBox(20, 1, 2, 29, CITY_STONE); // Right shaft wall
+    cityOfTears.fillBox(15, 24, 5, 1, CITY_STONE); // Platform level 1 (y = 768)
+    cityOfTears.fillBox(15, 18, 5, 1, CITY_STONE); // Platform level 2 (y = 576)
+    cityOfTears.fillBox(15, 12, 5, 1, CITY_STONE); // Platform level 3 (y = 384)
+    cityOfTears.fillBox(15, 6, 5, 1, CITY_STONE);  // Platform level 4 (y = 192)
+
+    // Spires & Ascending Platforms to Crystal Peak (x = 2800 to 3100)
+    cityOfTears.fillBox(88, 25, 8, 1, CITY_STONE);
+    cityOfTears.fillBox(91, 19, 7, 1, CITY_STONE);
+    cityOfTears.fillBox(89, 13, 7, 1, CITY_STONE);
+    cityOfTears.fillBox(92, 7, 6, 1, CITY_STONE);
+
     cityOfTears.benches.push(new Bench(2200, 968, 'city_of_tears'));
     cityOfTears.stagStations.push(new StagStation(2100, 964, 'city_of_tears', 'City of Tears Central Station', 'city_of_tears'));
 
-    cityOfTears.addEnemy(new HuskSentinel(700, 920));
+    cityOfTears.npcs.push(
+      new NPC(2300, 968, 'Lemm', "Welcome to the capital of Hallownest, wanderer. The rain never stops falling upon these spires.", { type: 'elderbug' })
+    );
 
+    cityOfTears.addEnemy(new HuskSentinel(700, 920));
+    cityOfTears.addEnemy(new HuskSentinel(1600, 920));
+    cityOfTears.addEnemy(new HuskSentinel(3400, 920));
+
+    // Return Door to Lower Crossroads & Ancient Basin (Elevator Shaft Top)
+    cityOfTears.addDoor({
+      x: 480, y: 0, width: 160, height: 100,
+      targetRoomId: 'crossroads_02', targetX: 2680, targetY: 900
+    });
+
+    // Return Door to Crystal Peak (Spire Top)
+    cityOfTears.addDoor({
+      x: 2940, y: 0, width: 160, height: 100,
+      targetRoomId: 'crystal_peak', targetX: 3550, targetY: 180
+    });
+
+    // West Door to Fog Canyon
     cityOfTears.addDoor({
       x: 0, y: 920, width: 70, height: 90,
       targetRoomId: 'fog_canyon', targetX: 3380, targetY: 920
     });
+
+    // East Door to Deepnest
     cityOfTears.addDoor({
       x: 4240, y: 920, width: 70, height: 90,
       targetRoomId: 'deepnest', targetX: 3700, targetY: 920
