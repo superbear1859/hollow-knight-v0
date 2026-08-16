@@ -8,6 +8,7 @@ import { Hornet } from '../entities/Hornet.js';
 import { SoulMaster } from '../entities/SoulMaster.js';
 import { MantisLords } from '../entities/MantisLords.js';
 import { DungDefender } from '../entities/DungDefender.js';
+import { CrystalGuardian } from '../entities/CrystalGuardian.js';
 import { CrumblingPlatform } from '../entities/CrumblingPlatform.js';
 import { BreakableWall } from '../entities/BreakableWall.js';
 import { VoidGate } from '../entities/VoidGate.js';
@@ -291,14 +292,19 @@ export class World {
     // ----------------------------------------------------
     // ROOM 6: CRYSTAL PEAK MINES (115x35 = 3680px x 1120px)
     // ----------------------------------------------------
-    const crystalPeak = new Room('crystal_peak', 'Crystal Peak Mines', 'crystal_peak', 115, 35);
+    const crystalPeak = new Room('crystal_peak', 'Crystal Peak Mines - Crystal Guardian', 'crystal_peak', 115, 35);
     crystalPeak.fillFrame(CRYSTAL_STONE);
     crystalPeak.fillBox(1, 31, 113, 3, CRYSTAL_STONE);
 
-    crystalPeak.collectibles.push(new AbilityUnlock(2200, 936, 'wallJump', 'Mantis Claw (Wall Jump)'));
+    // Elevated Crystal Ledges
+    crystalPeak.fillBox(25, 25, 12, 1, CRYSTAL_STONE);
+    crystalPeak.fillBox(50, 21, 15, 1, CRYSTAL_STONE);
+    crystalPeak.fillBox(75, 25, 12, 1, CRYSTAL_STONE);
 
+    crystalPeak.benches.push(new Bench(1800, 950, 'crystal_peak'));
+    crystalPeak.addEnemy(new CrystalGuardian(1800, 930));
     crystalPeak.addEnemy(new Vengefly(600, 400));
-    crystalPeak.addEnemy(new Crawlid(1400, 930));
+    crystalPeak.addEnemy(new Crawlid(1200, 930));
 
     crystalPeak.addDoor({
       x: 0, y: 920, width: 70, height: 90,

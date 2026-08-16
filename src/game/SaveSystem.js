@@ -34,7 +34,8 @@ export class SaveSystem {
         hornet: false,
         soulMaster: false,
         mantisLords: false,
-        dungDefender: false
+        dungDefender: false,
+        crystalGuardian: false
       },
       lastBenchRoom: 'dirtmouth_01',
       lastBenchX: 700,

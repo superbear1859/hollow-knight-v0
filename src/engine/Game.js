@@ -596,6 +596,16 @@ export class Game {
             if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
             this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#d7ccc8');
           }
+          if (enemy.bossName.includes('CRYSTAL GUARDIAN')) {
+            this.bossesDefeated.crystalGuardian = true;
+            if (!this.player.abilities.wallJump) {
+              const clawPedestal = new AbilityUnlock(1800, 936, 'wallJump', 'Mantis Claw (Wall Jump)');
+              room.collectibles.push(clawPedestal);
+              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+              this.particles.spawnShockwave(1800, 936, 140, '#ff66cc');
+              this.particles.spawnHitSparks(1800, 936, 24, '#ffffff');
+            }
+          }
         }
       }
 
@@ -718,6 +728,14 @@ export class Game {
         const hasPedestal = room.collectibles.some(c => c.abilityKey === 'doubleJump');
         if (!hasPedestal) {
           room.collectibles.push(new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)'));
+        }
+      }
+
+      // Spawn Mantis Claw Pedestal ONLY if Crystal Guardian has been defeated and ability is not yet unlocked
+      if (roomId === 'crystal_peak' && this.bossesDefeated.crystalGuardian && !this.player.abilities.wallJump) {
+        const hasPedestal = room.collectibles.some(c => c.abilityKey === 'wallJump');
+        if (!hasPedestal) {
+          room.collectibles.push(new AbilityUnlock(1800, 936, 'wallJump', 'Mantis Claw (Wall Jump)'));
         }
       }
 
