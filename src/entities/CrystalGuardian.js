@@ -4,7 +4,7 @@ import { Physics } from '../engine/Physics.js';
 export class CrystalGuardian extends Enemy {
   constructor(x, y) {
     super(x, y, 52, 60, 260, 250); // 260 HP
-    this.speed = 170;
+    this.speed = 180;
     this.state = 'RESTING'; // RESTING, AWAKEN, IDLE, JUMP, LASER_AIM, LASER_FIRE, CEILING_LASER_AIM, CEILING_LASER_FIRE, CRYSTAL_SPIKES
     this.stateTimer = 1.0;
     this.facing = -1;
@@ -21,20 +21,19 @@ export class CrystalGuardian extends Enemy {
   takeDamage(damage, sourceX, soundManager, particles, player) {
     if (this.invulnerable || this.isDead) return false;
 
-    // Wake up if resting
-    if (this.state === 'RESTING') {
+    // Immediately awaken and engage in battle
+    if (this.state === 'RESTING' || this.state === 'AWAKEN') {
       this.awaken(soundManager, particles);
     }
 
     const defeated = super.takeDamage(damage, sourceX, soundManager, particles, player);
-    // Strict hurt invulnerability to ensure no rapid health drain
     this.invulnerable = true;
-    this.invulnerableTimer = 0.25;
+    this.invulnerableTimer = 0.22;
 
     if (this.hp <= this.maxHp * 0.5 && !this.enraged) {
       this.enraged = true;
       if (particles && particles.spawnShockwave) {
-        particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 100, '#ff44aa');
+        particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 120, '#ff44aa');
       }
     }
     return defeated;
@@ -43,10 +42,11 @@ export class CrystalGuardian extends Enemy {
   awaken(soundManager, particles) {
     if (this.state !== 'RESTING') return;
     this.state = 'AWAKEN';
-    this.stateTimer = 0.9;
+    this.stateTimer = 0.5;
+    this.vy = -350; // Jump up off the bench to engage player
     if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
     if (particles && particles.spawnShockwave) {
-      particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 100, '#ff66cc');
+      particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 110, '#ff66cc');
       particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height / 2, 20, '#ffffff');
     }
   }
@@ -62,17 +62,19 @@ export class CrystalGuardian extends Enemy {
     const dist = Math.abs(dx);
 
     if (this.state === 'RESTING') {
-      if (dist < 160) {
+      if (dist < 220) {
         this.awaken(soundManager, particles);
       }
+      Physics.checkTileCollision(this, room, dt);
       return;
     }
 
     if (this.state === 'AWAKEN') {
-      if (this.stateTimer <= 0) {
+      if (this.stateTimer <= 0 || (this.grounded && this.vy >= 0)) {
         this.state = 'IDLE';
-        this.stateTimer = 0.5;
+        this.stateTimer = 0.4;
       }
+      Physics.checkTileCollision(this, room, dt);
       return;
     }
 
@@ -91,7 +93,8 @@ export class CrystalGuardian extends Enemy {
         // 1. AIMED HORIZONTAL LASER BEAM
         this.state = 'LASER_AIM';
         this.facing = dx > 0 ? 1 : -1;
-        this.stateTimer = 0.65 * actionSpeed;
+        this.stateTimer = 0.55 * actionSpeed;
+        this.vx = 0;
         if (soundManager && soundManager.playSlash) soundManager.playSlash();
         if (particles && particles.spawnHitSparks) {
           particles.spawnHitSparks(this.x + (this.facing > 0 ? this.width : 0), this.y + 24, 8, '#ff66cc');
@@ -99,7 +102,8 @@ export class CrystalGuardian extends Enemy {
       } else if (rand < 0.60) {
         // 2. CEILING CRYSTAL LASER BARRAGE
         this.state = 'CEILING_LASER_AIM';
-        this.stateTimer = 0.8 * actionSpeed;
+        this.stateTimer = 0.75 * actionSpeed;
+        this.vx = 0;
         this.ceilingLasers = [];
         const laserCount = this.enraged ? 4 : 3;
         for (let i = 0; i < laserCount; i++) {
@@ -107,15 +111,15 @@ export class CrystalGuardian extends Enemy {
           this.ceilingLasers.push({
             x: Math.max(80, Math.min(room.width - 120, targetX)),
             width: 28,
-            timer: 0.8 * actionSpeed,
+            timer: 0.75 * actionSpeed,
             active: false
           });
         }
         if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
       } else if (rand < 0.82) {
-        // 3. CRYSTAL SPIKE ERUPTION (Ground Smash creating jagged spikes)
+        // 3. CRYSTAL SPIKE ERUPTION
         this.state = 'CRYSTAL_SPIKES';
-        this.stateTimer = 1.3 * actionSpeed;
+        this.stateTimer = 1.1 * actionSpeed;
         this.vx = 0;
         this.crystalSpikes = [];
         for (let i = -2; i <= 2; i++) {
@@ -124,7 +128,7 @@ export class CrystalGuardian extends Enemy {
             y: this.y + this.height - 32,
             width: 26,
             height: 38,
-            life: 1.2
+            life: 1.1
           });
         }
         if (soundManager && soundManager.playHit) soundManager.playHit();
@@ -133,11 +137,11 @@ export class CrystalGuardian extends Enemy {
           particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 120, '#ff44aa');
         }
       } else {
-        // 4. JUMP & REPOSITION LEAP
+        // 4. JUMP & REPOSITION SLAM
         this.state = 'JUMP';
-        this.vy = -540;
-        this.vx = (dx > 0 ? 1 : -1) * (180 + Math.random() * 80);
-        this.stateTimer = 1.0;
+        this.vy = -560;
+        this.vx = (dx > 0 ? 1 : -1) * (200 + Math.random() * 80);
+        this.stateTimer = 1.5; // safety timeout
         if (soundManager && soundManager.playSlash) soundManager.playSlash();
       }
     }
@@ -145,7 +149,11 @@ export class CrystalGuardian extends Enemy {
     // ----------------------------------------------------
     // STATE ACTIONS
     // ----------------------------------------------------
-    if (this.state === 'LASER_AIM') {
+    if (this.state === 'IDLE') {
+      // Active stalk/pacing toward player
+      this.vx = this.facing * (this.speed * 0.75);
+    } else if (this.state === 'LASER_AIM') {
+      this.vx = 0;
       if (this.stateTimer <= 0) {
         this.state = 'LASER_FIRE';
         this.stateTimer = 0.45;
@@ -162,6 +170,7 @@ export class CrystalGuardian extends Enemy {
         if (camera && camera.shake) camera.shake(4, 0.2);
       }
     } else if (this.state === 'LASER_FIRE') {
+      this.vx = 0;
       if (this.laserBeam) {
         this.laserBeam.timer -= dt;
         if (Physics.rectIntersect(this.laserBeam, player.getBounds())) {
@@ -173,10 +182,11 @@ export class CrystalGuardian extends Enemy {
         if (this.laserBeam.timer <= 0) {
           this.laserBeam = null;
           this.state = 'IDLE';
-          this.stateTimer = this.enraged ? 0.35 : 0.6;
+          this.stateTimer = this.enraged ? 0.35 : 0.55;
         }
       }
     } else if (this.state === 'CEILING_LASER_AIM') {
+      this.vx = 0;
       if (this.stateTimer <= 0) {
         this.state = 'CEILING_LASER_FIRE';
         this.stateTimer = 0.45;
@@ -187,6 +197,7 @@ export class CrystalGuardian extends Enemy {
         if (camera && camera.shake) camera.shake(5, 0.25);
       }
     } else if (this.state === 'CEILING_LASER_FIRE') {
+      this.vx = 0;
       for (const cl of this.ceilingLasers) {
         if (cl.active) {
           const laserRect = { x: cl.x - cl.width / 2, y: 0, width: cl.width, height: room.height };
@@ -201,9 +212,10 @@ export class CrystalGuardian extends Enemy {
       if (this.stateTimer <= 0) {
         this.ceilingLasers = [];
         this.state = 'IDLE';
-        this.stateTimer = this.enraged ? 0.4 : 0.7;
+        this.stateTimer = this.enraged ? 0.35 : 0.6;
       }
     } else if (this.state === 'CRYSTAL_SPIKES') {
+      this.vx = 0;
       for (let i = this.crystalSpikes.length - 1; i >= 0; i--) {
         const spike = this.crystalSpikes[i];
         spike.life -= dt;
@@ -216,10 +228,10 @@ export class CrystalGuardian extends Enemy {
       }
       if (this.stateTimer <= 0) {
         this.state = 'IDLE';
-        this.stateTimer = this.enraged ? 0.35 : 0.5;
+        this.stateTimer = this.enraged ? 0.3 : 0.5;
       }
     } else if (this.state === 'JUMP') {
-      if (this.grounded && this.vy >= 0) {
+      if ((this.grounded && this.vy >= 0) || this.stateTimer <= 0) {
         this.state = 'IDLE';
         this.vx = 0;
         this.stateTimer = this.enraged ? 0.3 : 0.5;
@@ -229,20 +241,23 @@ export class CrystalGuardian extends Enemy {
         }
       }
     }
+
+    Physics.checkTileCollision(this, room, dt);
   }
 
   draw(ctx, camera) {
     if (!this.active || this.isDead) return;
 
-    const screenX = this.x - camera.x;
-    const screenY = this.y - camera.y;
+    const view = camera.getView ? camera.getView() : camera;
+    const screenX = Math.round(this.x - view.x);
+    const screenY = Math.round(this.y - view.y);
 
     ctx.save();
 
     // 1. Draw Ceiling Laser Telegraphs / Active Beams
     if (this.ceilingLasers && this.ceilingLasers.length > 0) {
       for (const cl of this.ceilingLasers) {
-        const cx = cl.x - camera.x;
+        const cx = cl.x - view.x;
         if (cl.active) {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(cx - cl.width / 2, 0, cl.width, 1000);
@@ -263,8 +278,8 @@ export class CrystalGuardian extends Enemy {
 
     // 2. Draw Crystal Spikes
     for (const spike of this.crystalSpikes) {
-      const sx = spike.x - camera.x;
-      const sy = spike.y - camera.y;
+      const sx = spike.x - view.x;
+      const sy = spike.y - view.y;
       ctx.fillStyle = '#ff44aa';
       ctx.beginPath();
       ctx.moveTo(sx, sy + spike.height);
@@ -276,15 +291,15 @@ export class CrystalGuardian extends Enemy {
 
     // 3. Draw Horizontal Laser Beam
     if (this.laserBeam) {
-      const lx = this.laserBeam.x - camera.x;
-      const ly = this.laserBeam.y - camera.y;
+      const lx = this.laserBeam.x - view.x;
+      const ly = this.laserBeam.y - view.y;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(lx, ly, this.laserBeam.width, this.laserBeam.height);
       ctx.fillStyle = 'rgba(255, 68, 170, 0.7)';
       ctx.fillRect(lx, ly - 3, this.laserBeam.width, this.laserBeam.height + 6);
     } else if (this.state === 'LASER_AIM') {
-      const lx = (this.facing > 0 ? this.x + this.width : this.x) - camera.x;
-      const ly = (this.y + 24) - camera.y;
+      const lx = (this.facing > 0 ? this.x + this.width : this.x) - view.x;
+      const ly = (this.y + 24) - view.y;
       ctx.strokeStyle = 'rgba(255, 100, 200, 0.6)';
       ctx.lineWidth = 2;
       if (typeof ctx.setLineDash === 'function') ctx.setLineDash([6, 6]);
@@ -303,7 +318,7 @@ export class CrystalGuardian extends Enemy {
     ctx.shadowBlur = this.enraged ? 18 : 10;
 
     // Heavy Crystalline Husk Body
-    ctx.fillStyle = '#2a1a2e';
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#2a1a2e';
     ctx.fillRect(-22, -26, 44, 52);
 
     // Crystal Shards on Head & Back
