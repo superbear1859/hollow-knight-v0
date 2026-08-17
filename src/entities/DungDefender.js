@@ -4,9 +4,9 @@ import { Physics } from '../engine/Physics.js';
 export class DungDefender extends Enemy {
   constructor(x, y) {
     super(x, y, 48, 54, 300, 250); // 300 HP
-    this.speed = 160;
-    this.state = 'IDLE'; // IDLE, BURROW, ERUPT, ROLL_BALL, DIVE, GEYSER_BURST, CURL_ROLL
-    this.stateTimer = 1.0;
+    this.speed = 180;
+    this.state = 'IDLE'; // IDLE, MOVE, BURROW, ERUPT, ROLL_BALL, DIVE, GEYSER_BURST, CURL_ROLL
+    this.stateTimer = 0.8;
     this.facing = -1;
     this.isBoss = true;
     this.bossName = 'DUNG DEFENDER';
@@ -23,8 +23,9 @@ export class DungDefender extends Enemy {
     this.stateTimer -= dt;
 
     const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
+    const dist = Math.abs(dx);
 
-    if (this.state !== 'BURROW') {
+    if (this.state !== 'BURROW' && this.state !== 'CURL_ROLL') {
       this.facing = dx > 0 ? 1 : -1;
     }
 
@@ -32,82 +33,111 @@ export class DungDefender extends Enemy {
     // STATE MACHINE & ATTACKS
     // ----------------------------------------------------
     if (this.stateTimer <= 0) {
-      const rand = Math.random();
+      if (this.state === 'IDLE') {
+        const rand = Math.random();
 
-      if (rand < 0.25) {
-        // 1. BURROW & ERUPT ("DOMA DOMA!")
-        this.state = 'BURROW';
-        this.vx = (dx > 0 ? 1 : -1) * 230;
-        this.vy = 0;
-        this.stateTimer = 1.2;
-        if (particles && particles.spawnHitSparks) {
-          particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height, 12, '#8d6e63');
+        if (rand < 0.28) {
+          // 1. BURROW UNDERGROUND & ERUPT ("DOMA DOMA!")
+          this.state = 'BURROW';
+          this.facing = dx > 0 ? 1 : -1;
+          this.vx = this.facing * 340; // Burrows fast across the arena floor
+          this.vy = 0;
+          this.stateTimer = 1.4;
+          if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+          if (particles && particles.spawnHitSparks) {
+            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height, 14, '#8d6e63');
+          }
+        } else if (rand < 0.52) {
+          // 2. CURL ROLL & BOUNCE ACROSS THE ARENA
+          this.state = 'CURL_ROLL';
+          this.facing = dx > 0 ? 1 : -1;
+          this.vx = this.facing * 380;
+          this.vy = -260;
+          this.stateTimer = 2.2;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        } else if (rand < 0.72) {
+          // 3. TOSS BOUNCING DUNG SPHERES
+          this.state = 'ROLL_BALL';
+          this.vx = this.facing * 120;
+          this.vy = -220;
+          this.stateTimer = 1.4;
+
+          this.balls.push(
+            { x: this.x + this.width / 2, y: this.y + 10, vx: (dx > 0 ? 1 : -1) * 320, vy: -280, radius: 15, life: 4.0 },
+            { x: this.x + this.width / 2, y: this.y + 10, vx: (dx > 0 ? -1 : 1) * 220, vy: -340, radius: 15, life: 4.0 }
+          );
+          if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+        } else if (rand < 0.88) {
+          // 4. VOLCANIC DUNG GEYSER BURST
+          this.state = 'GEYSER_BURST';
+          this.vy = -620;
+          this.vx = this.facing * 180;
+          this.stateTimer = 1.8;
+
+          for (let i = -2; i <= 2; i++) {
+            if (i === 0) continue;
+            this.balls.push({
+              x: this.x + this.width / 2,
+              y: this.y,
+              vx: i * 160 + (dx > 0 ? 60 : -60),
+              vy: -440 + Math.random() * 80,
+              radius: 13,
+              life: 3.5
+            });
+          }
+          if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+          if (camera && camera.shake) camera.shake(5, 0.25);
+        } else {
+          // 5. HIGH LEAP DIVE SMASH
+          this.state = 'DIVE';
+          this.vx = this.facing * 300;
+          this.vy = -600;
+          this.stateTimer = 1.6;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
         }
-      } else if (rand < 0.50) {
-        // 2. TOSS BOUNCING DUNG BALLS
-        this.state = 'ROLL_BALL';
-        this.vx = 0;
-        this.vy = -180;
-        this.stateTimer = 1.5;
-
-        // Spawn 2 bouncing brown spheres
-        this.balls.push(
-          { x: this.x + this.width / 2, y: this.y + 10, vx: (dx > 0 ? 1 : -1) * 320, vy: -260, radius: 14, life: 3.5 },
-          { x: this.x + this.width / 2, y: this.y + 10, vx: (dx > 0 ? -1 : 1) * 240, vy: -320, radius: 14, life: 3.5 }
-        );
-        if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
-      } else if (rand < 0.72) {
-        // 3. GEYSER BURST (Erupts and sends 4 dung volleys skyward)
-        this.state = 'GEYSER_BURST';
-        this.vy = -500;
-        this.vx = (dx > 0 ? 1 : -1) * 120;
-        this.stateTimer = 1.6;
-
-        for (let i = -2; i <= 2; i++) {
-          if (i === 0) continue;
-          this.balls.push({
-            x: this.x + this.width / 2,
-            y: this.y,
-            vx: i * 160,
-            vy: -420 + Math.random() * 80,
-            radius: 12,
-            life: 3.0
-          });
-        }
-        if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
-        if (camera && camera.shake) camera.shake(5, 0.25);
-      } else if (rand < 0.88) {
-        // 4. CURL ROLL BOUNCE
-        this.state = 'CURL_ROLL';
-        this.vx = (dx > 0 ? 1 : -1) * 420;
-        this.vy = -200;
-        this.stateTimer = 1.3;
-        if (soundManager && soundManager.playSlash) soundManager.playSlash();
       } else {
-        // 5. HIGH LEAP DIVE
-        this.state = 'DIVE';
-        this.vx = (dx > 0 ? 1 : -1) * 260;
-        this.vy = -560;
-        this.stateTimer = 1.5;
-        if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        // Return to active patrol / stalk
+        this.state = 'IDLE';
+        this.stateTimer = 0.6;
+        this.vx = this.facing * this.speed;
       }
     }
 
     // ----------------------------------------------------
     // STATE ACTIONS
     // ----------------------------------------------------
-    if (this.state === 'BURROW') {
-      if (particles && Math.random() < 0.5) {
+    if (this.state === 'IDLE') {
+      // Actively roam towards player
+      this.vx = this.facing * (this.speed * 0.85);
+    } else if (this.state === 'BURROW') {
+      this.vx = this.facing * 340;
+      if (particles && Math.random() < 0.6) {
         particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height - 4, 3, '#8d6e63');
+        particles.spawnDust(this.x + this.width / 2, this.y + this.height, 2);
       }
-      if (this.stateTimer < 0.2) {
+      // Erupt near player or when timer is low
+      if (this.stateTimer < 0.3 || dist < 80) {
         this.state = 'ERUPT';
-        this.vy = -620;
+        this.vy = -660;
+        this.vx = this.facing * 140;
         if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
         if (particles && particles.spawnShockwave) {
-          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 130, '#d7ccc8');
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 140, '#d7ccc8');
+          particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height, 20, '#8d6e63');
         }
-        if (camera && camera.shake) camera.shake(5, 0.2);
+        if (camera && camera.shake) camera.shake(5, 0.25);
+      }
+    } else if (this.state === 'CURL_ROLL') {
+      if (this.grounded) {
+        this.vy = -200; // Continuous bouncy rolling
+        if (particles && Math.random() < 0.4) {
+          particles.spawnDust(this.x + this.width / 2, this.y + this.height, 3);
+        }
+      }
+      // Bounce off room walls
+      if ((this.facing > 0 && this.x > room.width - 150) || (this.facing < 0 && this.x < 150)) {
+        this.facing = -this.facing;
+        this.vx = this.facing * 380;
       }
     } else if (this.state === 'ERUPT' || this.state === 'DIVE' || this.state === 'GEYSER_BURST') {
       if (this.grounded && this.vy >= 0) {
@@ -116,12 +146,8 @@ export class DungDefender extends Enemy {
         this.vx = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
         if (particles && particles.spawnShockwave) {
-          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 100, '#8d6e63');
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 110, '#8d6e63');
         }
-      }
-    } else if (this.state === 'CURL_ROLL') {
-      if (this.grounded) {
-        this.vy = -180; // Bouncing ball motion
       }
     }
 
@@ -133,13 +159,16 @@ export class DungDefender extends Enemy {
       ball.vy += 850 * dt; // Gravity
       ball.life -= dt;
 
-      // Floor bounce
+      // Floor & wall bounce
       if (ball.y >= room.height - 180) {
         ball.y = room.height - 180;
         ball.vy = -ball.vy * 0.78;
         if (particles && Math.random() < 0.5) {
           particles.spawnDust(ball.x, ball.y, 4);
         }
+      }
+      if (ball.x <= 80 || ball.x >= room.width - 80) {
+        ball.vx = -ball.vx * 0.85;
       }
 
       const ballRect = { x: ball.x - ball.radius, y: ball.y - ball.radius, width: ball.radius * 2, height: ball.radius * 2 };
@@ -151,20 +180,23 @@ export class DungDefender extends Enemy {
         this.balls.splice(i, 1);
       }
     }
+
+    Physics.checkTileCollision(this, room, dt);
   }
 
   draw(ctx, camera) {
     if (!this.active || this.isDead) return;
 
-    const screenX = this.x - camera.x;
-    const screenY = this.y - camera.y;
+    const view = camera.getView ? camera.getView() : camera;
+    const screenX = Math.round(this.x - view.x);
+    const screenY = Math.round(this.y - view.y);
 
     ctx.save();
 
     // 1. Draw Bouncing Dung Spheres
     for (const ball of this.balls) {
-      const bx = ball.x - camera.x;
-      const by = ball.y - camera.y;
+      const bx = ball.x - view.x;
+      const by = ball.y - view.y;
 
       ctx.fillStyle = '#6d4c41';
       ctx.beginPath();
@@ -183,17 +215,32 @@ export class DungDefender extends Enemy {
     if (this.facing < 0) ctx.scale(-1, 1);
 
     if (this.state === 'BURROW') {
-      // Burrowed lump in soil
+      // Burrowed lump moving through soil
       ctx.fillStyle = '#5d4037';
       ctx.beginPath();
-      ctx.arc(0, 20, 18, 0, Math.PI, true);
+      ctx.arc(0, 18, 20, 0, Math.PI, true);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    if (this.state === 'CURL_ROLL') {
+      // Rolling ball mode
+      ctx.rotate((this.animTimer || 0) * (this.facing * 12));
+      ctx.fillStyle = '#5d4037';
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#8d6e63';
+      ctx.beginPath();
+      ctx.arc(0, -6, 12, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
       return;
     }
 
     // Round Heavy Beetle Armor
-    ctx.fillStyle = '#5d4037';
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#5d4037';
     ctx.beginPath();
     ctx.arc(0, 0, 24, 0, Math.PI * 2);
     ctx.fill();
