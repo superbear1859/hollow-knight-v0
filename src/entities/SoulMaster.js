@@ -61,19 +61,19 @@ export class SoulMaster extends Enemy {
         this.stateTimer = 1.8;
         if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
       } else if (rand < 0.74) {
-        // 3. SPIRAL ORB DASH (Surrounded by 4 orbs and dashes across arena)
-        this.state = 'SPIRAL_DASH';
+        // 3. SPIRAL ORB DASH (Telegraphs on side then glides across arena at readable speed)
+        this.state = 'SPIRAL_CHARGE';
         this.x = dx > 0 ? 140 : room.width - 200;
         this.y = 570;
         this.facing = dx > 0 ? 1 : -1;
-        this.vx = this.facing * 520;
+        this.vx = 0;
         this.vy = 0;
-        this.stateTimer = 1.6;
+        this.stateTimer = 0.4; // 0.4s telegraph wind-up
 
         this.orbs = [];
         for (let i = 0; i < 4; i++) {
           const angle = (i / 4) * Math.PI * 2;
-          this.orbs.push({ angle, dist: 55, speed: 5.5 });
+          this.orbs.push({ angle, dist: 55, speed: 3.8 });
         }
         if (soundManager && soundManager.playSlash) soundManager.playSlash();
         if (particles && particles.spawnHitSparks) {
@@ -160,6 +160,18 @@ export class SoulMaster extends Enemy {
           }
         }
       }
+    } else if (this.state === 'SPIRAL_CHARGE') {
+      this.vx = 0;
+      // Rotate orbs during charge telegraph
+      for (const orb of this.orbs) {
+        orb.angle += dt * orb.speed;
+      }
+      if (this.stateTimer <= 0) {
+        this.state = 'SPIRAL_DASH';
+        this.vx = this.facing * 260; // Fair, readable dash speed (down from 520)
+        this.stateTimer = 2.5;
+        if (soundManager && soundManager.playDash) soundManager.playDash();
+      }
     } else if (this.state === 'SPIRAL_DASH') {
       this.x += this.vx * dt;
       for (const orb of this.orbs) {
@@ -173,7 +185,7 @@ export class SoulMaster extends Enemy {
       }
       if (this.stateTimer <= 0 || (this.facing > 0 && this.x > room.width - 150) || (this.facing < 0 && this.x < 150)) {
         this.state = 'IDLE';
-        this.stateTimer = 0.5;
+        this.stateTimer = 0.6;
         this.orbs = [];
         this.vx = 0;
       }
