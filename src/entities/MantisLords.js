@@ -3,20 +3,15 @@ import { Physics } from '../engine/Physics.js';
 
 export class MantisLords extends Enemy {
   constructor(x, y) {
-    super(x, y, 36, 56, 50, 250);
+    super(x, y, 36, 56, 280, 250); // 280 HP
     this.speed = 240;
-    this.state = 'GROUND_STANCE'; // GROUND_STANCE, DASH_ATTACK, WALL_CLING, DIVE_PLUNGE
-    this.stateTimer = 1.6; // Stays grounded on entry
+    this.state = 'GROUND_STANCE'; // GROUND_STANCE, DASH_ATTACK, WALL_CLING, DIVE_PLUNGE, TWIN_SLASH, DOUBLE_DISC
+    this.stateTimer = 1.4;
     this.facing = -1;
     this.isBoss = true;
     this.bossName = 'MANTIS LORDS';
 
-    this.discActive = false;
-    this.discX = 0;
-    this.discY = 0;
-    this.discVx = 0;
-    this.discVy = 0;
-    this.discTimer = 0;
+    this.discs = []; // [{ x, y, vx, vy, timer }]
     this.animTimer = 0;
   }
 
@@ -31,7 +26,6 @@ export class MantisLords extends Enemy {
 
     if (this.state === 'GROUND_STANCE' || this.state === 'IDLE') {
       this.facing = dx > 0 ? 1 : -1;
-      // Light ground pacing/stalking
       this.vx = this.facing * 35;
     }
 
@@ -39,51 +33,68 @@ export class MantisLords extends Enemy {
     // STATE MACHINE & ATTACK SELECTION
     // ----------------------------------------------------
     if (this.stateTimer <= 0) {
-      if (this.state === 'DASH_ATTACK' || this.state === 'DIVE_PLUNGE' || this.state === 'WALL_CLING') {
-        // Always return to Ground Stance for prolonged ground presence (1.4 - 1.8s)
+      if (this.state === 'DASH_ATTACK' || this.state === 'DIVE_PLUNGE' || this.state === 'WALL_CLING' || this.state === 'TWIN_SLASH' || this.state === 'DOUBLE_DISC') {
         this.state = 'GROUND_STANCE';
-        this.stateTimer = 1.5;
+        this.stateTimer = 1.3;
         this.vx = 0;
       } else {
-        // Select next attack from Ground Stance
         const rand = Math.random();
 
-        if (rand < 0.50) {
-          // 1. DASH THRUST (Ground Lunge across the arena)
+        if (rand < 0.28) {
+          // 1. DASH THRUST
           this.state = 'DASH_ATTACK';
           this.facing = dx > 0 ? 1 : -1;
-          this.vx = this.facing * 520;
+          this.vx = this.facing * 550;
           this.vy = 0;
           this.stateTimer = 0.75;
           if (soundManager && soundManager.playDash) soundManager.playDash();
-          if (particles && particles.spawnHitSparks) {
-            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height - 10, 10, '#ffffff');
-          }
-        } else if (rand < 0.75) {
-          // 2. WALL CLING & BOOMERANG DISC THROW (Brief wall cling, then drops back to ground!)
+        } else if (rand < 0.50) {
+          // 2. WALL CLING BOOMERANG DISC
           this.state = 'WALL_CLING';
           this.x = dx > 0 ? 80 : room.width - 120;
-          this.y = 220; // High on wall
+          this.y = 220;
           this.vx = 0;
           this.vy = 0;
-          this.stateTimer = 1.0;
+          this.stateTimer = 1.1;
 
-          // Launch spinning mantis boomerang blade
-          this.discActive = true;
-          this.discX = this.x + this.width / 2;
-          this.discY = this.y + 20;
-          this.discVx = (dx > 0 ? 1 : -1) * 380;
-          this.discVy = 40;
-          this.discTimer = 1.6;
+          this.discs.push({
+            x: this.x + this.width / 2,
+            y: this.y + 20,
+            vx: (dx > 0 ? 1 : -1) * 400,
+            vy: 40,
+            timer: 1.6
+          });
           if (soundManager && soundManager.playSlash) soundManager.playSlash();
-        } else {
-          // 3. AERIAL DIVE PLUNGE (Plunges from above directly into ground)
+        } else if (rand < 0.72) {
+          // 3. AERIAL DIVE PLUNGE
           this.state = 'DIVE_PLUNGE';
           this.x = player.x + (Math.random() - 0.5) * 60;
           this.y = 100;
           this.vx = 0;
-          this.vy = 680;
+          this.vy = 720;
           this.stateTimer = 1.0;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        } else if (rand < 0.88) {
+          // 4. TWIN SLASH COMBO
+          this.state = 'TWIN_SLASH';
+          this.facing = dx > 0 ? 1 : -1;
+          this.vx = this.facing * 480;
+          this.vy = 0;
+          this.stateTimer = 0.9;
+          if (soundManager && soundManager.playSlash) soundManager.playSlash();
+        } else {
+          // 5. DOUBLE BOOMERANG DISCS
+          this.state = 'DOUBLE_DISC';
+          this.x = dx > 0 ? 90 : room.width - 130;
+          this.y = 200;
+          this.vx = 0;
+          this.vy = 0;
+          this.stateTimer = 1.2;
+
+          this.discs.push(
+            { x: this.x, y: this.y + 10, vx: (dx > 0 ? 1 : -1) * 380, vy: 30, timer: 1.8 },
+            { x: this.x, y: this.y + 40, vx: (dx > 0 ? 1 : -1) * 320, vy: -20, timer: 1.8 }
+          );
           if (soundManager && soundManager.playSlash) soundManager.playSlash();
         }
       }
@@ -92,149 +103,107 @@ export class MantisLords extends Enemy {
     // ----------------------------------------------------
     // STATE ACTIONS
     // ----------------------------------------------------
-    if (this.state === 'DASH_ATTACK') {
+    if (this.state === 'DASH_ATTACK' || this.state === 'TWIN_SLASH') {
       this.vx *= 0.97;
-    } else if (this.state === 'WALL_CLING') {
+    } else if (this.state === 'WALL_CLING' || this.state === 'DOUBLE_DISC') {
       this.vy = 0;
     } else if (this.state === 'DIVE_PLUNGE') {
       if (this.grounded || this.y >= room.height - 180) {
-        // Land grounded in Ground Stance for prolonged vulnerability & sword stance (1.5s)
         this.state = 'GROUND_STANCE';
-        this.stateTimer = 1.5;
-        this.vy = 0;
+        this.stateTimer = 1.0;
         this.vx = 0;
+        this.vy = 0;
         if (soundManager && soundManager.playHit) soundManager.playHit();
         if (particles && particles.spawnShockwave) {
-          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 110, '#aaffcc');
+          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 100, '#88ffaa');
         }
-        if (camera && camera.shake) camera.shake(4, 0.15);
       }
     }
 
-    // Update Boomerang Scythe Disc
-    if (this.discActive) {
-      this.discTimer -= dt;
-      this.discX += this.discVx * dt;
-      this.discY += this.discVy * dt;
+    // Update Mantis Discs
+    for (let i = this.discs.length - 1; i >= 0; i--) {
+      const disc = this.discs[i];
+      disc.x += disc.vx * dt;
+      disc.y += disc.vy * dt;
+      disc.timer -= dt;
 
-      // Boomerang curve back towards mantis
-      if (this.discTimer < 0.9) {
-        const backDx = (this.x + this.width / 2) - this.discX;
-        const backDy = (this.y + 20) - this.discY;
-        this.discVx += backDx * 3.5 * dt;
-        this.discVy += backDy * 3.5 * dt;
+      // Curving trajectory back toward player
+      if (disc.timer < 0.9) {
+        disc.vx = -disc.vx * 0.98;
       }
 
-      if (particles && Math.random() < 0.4) {
-        particles.spawnHitSparks(this.discX, this.discY, 1, '#88ffaa');
+      const discRect = { x: disc.x - 14, y: disc.y - 14, width: 28, height: 28 };
+      if (Physics.rectIntersect(discRect, player.getBounds())) {
+        player.takeDamage(1, disc.x, soundManager, particles, camera);
       }
 
-      // Disc vs Player
-      const pDist = Math.hypot((player.x + player.width / 2) - this.discX, (player.y + player.height / 2) - this.discY);
-      if (pDist < 24 && !player.invulnerable) {
-        player.takeDamage(1, this.discX, soundManager, particles, camera);
-      }
-
-      if (this.discTimer <= 0) {
-        this.discActive = false;
+      if (disc.timer <= 0) {
+        this.discs.splice(i, 1);
       }
     }
-
-    Physics.checkTileCollision(this, room, dt);
   }
 
   draw(ctx, camera) {
-    const view = camera.getView();
-    const screenX = Math.round(this.x - view.x);
-    const screenY = Math.round(this.y - view.y);
+    if (!this.active || this.isDead) return;
+
+    const screenX = this.x - camera.x;
+    const screenY = this.y - camera.y;
 
     ctx.save();
+
+    // 1. Draw Spinning Boomerang Discs
+    for (const disc of this.discs) {
+      const dx = disc.x - camera.x;
+      const dy = disc.y - camera.y;
+
+      ctx.save();
+      ctx.translate(dx, dy);
+      ctx.rotate((this.animTimer || 0) * 16);
+      ctx.fillStyle = '#88ffaa';
+      ctx.shadowColor = '#88ffaa';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Blade edges
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Draw Mantis Lord Body
     ctx.translate(screenX + this.width / 2, screenY + this.height / 2);
     if (this.facing < 0) ctx.scale(-1, 1);
 
-    const groundBreathing = this.state === 'GROUND_STANCE' ? Math.sin(this.animTimer * 5) * 2 : 0;
+    ctx.shadowColor = '#88ffaa';
+    ctx.shadowBlur = 8;
 
-    // Slender Mantis Body
-    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#283c2e';
-    ctx.beginPath();
-    ctx.ellipse(0, 4 + groundBreathing, 10, 22, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Slender Body
+    ctx.fillStyle = '#223326';
+    ctx.fillRect(-8, -20, 16, 40);
 
-    // Mantis Long Antennae / Crest Horns
-    ctx.strokeStyle = '#8bc34a';
-    ctx.lineWidth = 2.5;
+    // Mantis Head & Antennae
+    ctx.fillStyle = '#18241b';
     ctx.beginPath();
-    ctx.moveTo(2, -18 + groundBreathing);
-    ctx.lineTo(14, -36 + groundBreathing);
-    ctx.moveTo(-2, -18 + groundBreathing);
-    ctx.lineTo(-8, -34 + groundBreathing);
-    ctx.stroke();
-
-    // Mantis Lord White Mask
-    ctx.fillStyle = '#f0f5ee';
-    ctx.beginPath();
-    ctx.moveTo(0, -26 + groundBreathing);
-    ctx.lineTo(8, -14 + groundBreathing);
-    ctx.lineTo(0, -6 + groundBreathing);
-    ctx.lineTo(-8, -14 + groundBreathing);
+    ctx.moveTo(0, -28);
+    ctx.lineTo(8, -16);
+    ctx.lineTo(-8, -16);
     ctx.closePath();
     ctx.fill();
 
-    // Glowing Green Eye
-    ctx.fillStyle = '#4caf50';
-    ctx.beginPath();
-    ctx.arc(3, -14 + groundBreathing, 2.5, 0, Math.PI * 2);
-    ctx.fill();
+    // Glowing Eyes
+    ctx.fillStyle = '#88ffaa';
+    ctx.fillRect(2, -22, 5, 4);
 
-    // Sharp Mantis Scythe Blades (Poised in combat stance)
-    ctx.fillStyle = '#b2dfdb';
-    ctx.strokeStyle = '#e0f2f1';
-    ctx.lineWidth = 1.5;
+    // Long Mantis Lance Weapon
+    ctx.strokeStyle = '#aaffcc';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    if (this.state === 'GROUND_STANCE') {
-      // Poised forward sword stance
-      ctx.moveTo(8, -4 + groundBreathing);
-      ctx.quadraticCurveTo(28, 4, 30, 24);
-      ctx.lineTo(20, 20);
-      ctx.quadraticCurveTo(18, 2, 8, -4 + groundBreathing);
-    } else {
-      ctx.moveTo(8, -4);
-      ctx.quadraticCurveTo(24, 6, 22, 28);
-      ctx.lineTo(14, 20);
-      ctx.quadraticCurveTo(16, 4, 8, -4);
-    }
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(36, 12);
     ctx.stroke();
-
-    // Draw Boomerang Scythe Disc
-    if (this.discActive) {
-      const discScreenX = Math.round(this.discX - view.x);
-      const discScreenY = Math.round(this.discY - view.y);
-
-      ctx.restore();
-      ctx.save();
-      ctx.translate(discScreenX, discScreenY);
-      ctx.rotate(this.animTimer * 16);
-
-      ctx.fillStyle = '#e8f5e9';
-      ctx.strokeStyle = '#4caf50';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 14, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Blade vanes
-      for (let i = 0; i < 3; i++) {
-        ctx.rotate((Math.PI * 2) / 3);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(14, -4);
-        ctx.lineTo(12, 6);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
 
     ctx.restore();
   }

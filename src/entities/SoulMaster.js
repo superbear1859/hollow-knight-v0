@@ -3,18 +3,16 @@ import { Physics } from '../engine/Physics.js';
 
 export class SoulMaster extends Enemy {
   constructor(x, y) {
-    super(x, y, 48, 64, 60, 300);
+    super(x, y, 48, 64, 300, 300); // 300 HP
     this.speed = 180;
-    this.state = 'IDLE'; // IDLE, TELEPORT, SLAM, ORB_ATTACK, HOVER
+    this.state = 'IDLE'; // IDLE, TELEPORT, SLAM, FAKEOUT_SLAM, SPIRAL_DASH, ORB_ATTACK, HOVER
     this.stateTimer = 1.0;
     this.facing = -1;
     this.isBoss = true;
     this.bossName = 'SOUL MASTER';
 
-    // Spell & Teleport Attributes
-    this.teleportTimer = 0;
-    this.orbs = []; // Rotating soul projectiles
-    this.slamImpactActive = false;
+    this.orbs = [];
+    this.fakeoutTriggered = false;
     this.animTimer = 0;
   }
 
@@ -26,9 +24,8 @@ export class SoulMaster extends Enemy {
     this.stateTimer -= dt;
 
     const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
-    const dy = (player.y + player.height / 2) - (this.y + this.height / 2);
 
-    if (this.state !== 'SLAM') {
+    if (this.state !== 'SLAM' && this.state !== 'FAKEOUT_SLAM' && this.state !== 'SPIRAL_DASH') {
       this.facing = dx > 0 ? 1 : -1;
     }
 
@@ -38,46 +35,56 @@ export class SoulMaster extends Enemy {
     if (this.stateTimer <= 0) {
       const rand = Math.random();
 
-      if (rand < 0.35) {
-        // 1. TELEPORT SLAM (Teleport high above player, then slam straight down!)
+      if (rand < 0.28) {
+        // 1. TELEPORT SLAM
         this.state = 'SLAM';
         this.x = player.x + (Math.random() - 0.5) * 40;
-        this.y = 120; // High ceiling
+        this.y = 100;
         this.vx = 0;
-        this.vy = 850; // Super fast slam velocity!
+        this.vy = 850;
         this.stateTimer = 1.2;
         if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
-        if (particles && particles.spawnHitSparks) {
-          particles.spawnHitSparks(this.x + this.width / 2, this.y, 12, '#ffffff');
+      } else if (rand < 0.52) {
+        // 2. FAKEOUT SLAM (Pauses in mid-air then double-slams!)
+        this.state = 'FAKEOUT_SLAM';
+        this.x = player.x + (Math.random() - 0.5) * 30;
+        this.y = 120;
+        this.vx = 0;
+        this.vy = 400;
+        this.fakeoutTriggered = false;
+        this.stateTimer = 1.5;
+        if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+      } else if (rand < 0.74) {
+        // 3. SPIRAL ORB DASH (Surrounded by 4 orbs and dashes across arena)
+        this.state = 'SPIRAL_DASH';
+        this.x = dx > 0 ? 100 : room.width - 150;
+        this.y = player.y - 10;
+        this.facing = dx > 0 ? 1 : -1;
+        this.vx = this.facing * 480;
+        this.vy = 0;
+        this.stateTimer = 1.6;
+
+        this.orbs = [];
+        for (let i = 0; i < 4; i++) {
+          const angle = (i / 4) * Math.PI * 2;
+          this.orbs.push({ angle, dist: 55, speed: 5 });
         }
-      } else if (rand < 0.70) {
-        // 2. SOUL ORB ATTACK (Hover and fire 4 tracking soul spheres)
+        if (soundManager && soundManager.playSlash) soundManager.playSlash();
+      } else {
+        // 4. SOUL ORB VOLLEY
         this.state = 'ORB_ATTACK';
-        this.x = player.x + (this.facing > 0 ? -240 : 240);
-        this.y = 280; // Floating mid-height
+        this.x = player.x + (this.facing > 0 ? -220 : 220);
+        this.y = 260;
         this.vx = 0;
         this.vy = 0;
         this.stateTimer = 1.8;
 
-        // Spawn rotating soul orbs
         this.orbs = [];
-        for (let i = 0; i < 4; i++) {
-          const angle = (i / 4) * Math.PI * 2;
-          this.orbs.push({ angle, dist: 50, speed: 4 });
+        for (let i = 0; i < 3; i++) {
+          const angle = (i / 3) * Math.PI * 2;
+          this.orbs.push({ angle, dist: 45, speed: 4 });
         }
         if (soundManager && soundManager.playSlash) soundManager.playSlash();
-      } else {
-        // 3. HOVER & TELEPORT REPOSITION
-        this.state = 'HOVER';
-        const targetX = player.x + (Math.random() > 0.5 ? 200 : -200);
-        this.x = Math.max(80, Math.min(room.width - 120, targetX));
-        this.y = 350;
-        this.vx = (player.x - this.x) * 0.4;
-        this.vy = 0;
-        this.stateTimer = 0.8;
-        if (particles && particles.spawnShockwave) {
-          particles.spawnShockwave(this.x + this.width / 2, this.y + this.height / 2, 70, '#ffffff');
-        }
       }
     }
 
@@ -85,7 +92,6 @@ export class SoulMaster extends Enemy {
     // STATE ACTIONS
     // ----------------------------------------------------
     if (this.state === 'SLAM') {
-      // Impact Ground
       if (this.grounded || this.y >= room.height - 180) {
         this.state = 'IDLE';
         this.stateTimer = 0.5;
@@ -97,112 +103,119 @@ export class SoulMaster extends Enemy {
         }
         if (camera && camera.shake) camera.shake(5, 0.25);
 
-        // Ground shockwave damage against player
-        const distToPlayer = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
-        if (distToPlayer < 120 && Math.abs(player.y - this.y) < 40 && !player.invulnerable) {
+        // Ground shockwave
+        const slamRect = { x: this.x - 70, y: this.y + this.height - 30, width: this.width + 140, height: 35 };
+        if (Physics.rectIntersect(slamRect, player.getBounds())) {
           player.takeDamage(1, this.x + this.width / 2, soundManager, particles, camera);
         }
       }
-    } else if (this.state === 'ORB_ATTACK') {
-      this.vy = Math.sin(this.animTimer * 4) * 20; // Gentle float
-      // Update rotating soul orbs
+    } else if (this.state === 'FAKEOUT_SLAM') {
+      if (!this.fakeoutTriggered && this.y >= 300) {
+        this.fakeoutTriggered = true;
+        this.vy = 0;
+        this.y = 220; // Teleport pause trick
+        if (soundManager && soundManager.playBossRoar) soundManager.playBossRoar();
+      } else if (this.fakeoutTriggered) {
+        this.vy = 900;
+        if (this.grounded || this.y >= room.height - 180) {
+          this.state = 'IDLE';
+          this.stateTimer = 0.6;
+          this.vy = 0;
+          if (soundManager && soundManager.playHit) soundManager.playHit();
+          if (particles && particles.spawnShockwave) {
+            particles.spawnShockwave(this.x + this.width / 2, this.y + this.height, 180, '#88d6ff');
+            particles.spawnHitSparks(this.x + this.width / 2, this.y + this.height, 24, '#ffffff');
+          }
+          if (camera && camera.shake) camera.shake(6, 0.3);
+
+          const wideSlamRect = { x: this.x - 110, y: this.y + this.height - 30, width: this.width + 220, height: 35 };
+          if (Physics.rectIntersect(wideSlamRect, player.getBounds())) {
+            player.takeDamage(1, this.x + this.width / 2, soundManager, particles, camera);
+          }
+        }
+      }
+    } else if (this.state === 'SPIRAL_DASH') {
+      // Rotating orbs damage check
       for (const orb of this.orbs) {
         orb.angle += dt * orb.speed;
         const ox = this.x + this.width / 2 + Math.cos(orb.angle) * orb.dist;
         const oy = this.y + this.height / 2 + Math.sin(orb.angle) * orb.dist;
-
-        if (particles && Math.random() < 0.3) {
-          particles.spawnHitSparks(ox, oy, 1, '#ffffff');
-        }
-
-        // Orb vs Player Collision
-        const pDist = Math.hypot((player.x + player.width / 2) - ox, (player.y + player.height / 2) - oy);
-        if (pDist < 20 && !player.invulnerable) {
+        const orbRect = { x: ox - 14, y: oy - 14, width: 28, height: 28 };
+        if (Physics.rectIntersect(orbRect, player.getBounds())) {
           player.takeDamage(1, ox, soundManager, particles, camera);
         }
       }
-    } else if (this.state === 'HOVER') {
-      this.vy = Math.sin(this.animTimer * 3) * 30;
-      this.vx *= 0.95;
+      if (this.stateTimer <= 0) {
+        this.state = 'IDLE';
+        this.stateTimer = 0.5;
+        this.orbs = [];
+      }
+    } else if (this.state === 'ORB_ATTACK') {
+      for (const orb of this.orbs) {
+        orb.angle += dt * orb.speed;
+        const ox = this.x + this.width / 2 + Math.cos(orb.angle) * orb.dist;
+        const oy = this.y + this.height / 2 + Math.sin(orb.angle) * orb.dist;
+        const orbRect = { x: ox - 12, y: oy - 12, width: 24, height: 24 };
+        if (Physics.rectIntersect(orbRect, player.getBounds())) {
+          player.takeDamage(1, ox, soundManager, particles, camera);
+        }
+      }
+      if (this.stateTimer <= 0) {
+        this.state = 'IDLE';
+        this.stateTimer = 0.5;
+        this.orbs = [];
+      }
     }
-
-    Physics.checkTileCollision(this, room, dt);
   }
 
   draw(ctx, camera) {
-    const view = camera.getView();
-    const screenX = Math.round(this.x - view.x);
-    const screenY = Math.round(this.y - view.y);
+    if (!this.active || this.isDead) return;
+
+    const screenX = this.x - camera.x;
+    const screenY = this.y - camera.y;
 
     ctx.save();
+
+    // Draw Orbiting Soul Orbs
+    for (const orb of this.orbs) {
+      const ox = this.x + this.width / 2 + Math.cos(orb.angle) * orb.dist - camera.x;
+      const oy = this.y + this.height / 2 + Math.sin(orb.angle) * orb.dist - camera.y;
+
+      ctx.save();
+      ctx.shadowColor = '#88d6ff';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(ox, oy, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw Soul Master Body
     ctx.translate(screenX + this.width / 2, screenY + this.height / 2);
     if (this.facing < 0) ctx.scale(-1, 1);
 
-    const hoverOffset = Math.sin(this.animTimer * 3) * 3;
+    ctx.shadowColor = '#88d6ff';
+    ctx.shadowBlur = 14;
 
-    // Glowing White Soul Aura
-    ctx.fillStyle = 'rgba(240, 248, 255, 0.2)';
+    // Flowing Robe
+    ctx.fillStyle = '#1e1428';
     ctx.beginPath();
-    ctx.arc(0, hoverOffset, 36, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Large Ornate Scholar Robes
-    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#1c2438';
-    ctx.beginPath();
-    ctx.moveTo(-22, -10 + hoverOffset);
-    ctx.lineTo(22, -10 + hoverOffset);
-    ctx.lineTo(26, 32 + hoverOffset);
-    ctx.lineTo(-26, 32 + hoverOffset);
+    ctx.moveTo(0, -32);
+    ctx.lineTo(24, 30);
+    ctx.lineTo(-24, 30);
     ctx.closePath();
     ctx.fill();
 
-    // Golden Robe Trimmings
-    ctx.strokeStyle = '#c89e3a';
-    ctx.lineWidth = 2;
+    // Soul Mask & Glowing Crown
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(-20, -8 + hoverOffset);
-    ctx.lineTo(20, -8 + hoverOffset);
-    ctx.lineTo(24, 30 + hoverOffset);
-    ctx.lineTo(-24, 30 + hoverOffset);
-    ctx.closePath();
-    ctx.stroke();
-
-    // White Porcelain Mask
-    ctx.fillStyle = '#f5f8fc';
-    ctx.beginPath();
-    ctx.ellipse(0, -20 + hoverOffset, 16, 18, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -18, 16, 20, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Mask Ornate Horn Crest
-    ctx.fillStyle = '#f5f8fc';
-    ctx.beginPath();
-    ctx.moveTo(-10, -36 + hoverOffset);
-    ctx.lineTo(0, -48 + hoverOffset);
-    ctx.lineTo(10, -36 + hoverOffset);
-    ctx.closePath();
-    ctx.fill();
-
-    // Slanted Soul Scholar Eye Sockets
-    ctx.fillStyle = '#0a0d18';
-    ctx.beginPath();
-    ctx.ellipse(6, -20 + hoverOffset, 3.5, 6, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw Rotating Soul Orbs
-    if (this.state === 'ORB_ATTACK') {
-      for (const orb of this.orbs) {
-        const ox = Math.cos(orb.angle) * orb.dist;
-        const oy = Math.sin(orb.angle) * orb.dist + hoverOffset;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#88d6ff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(ox, oy, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-    }
+    // Eyes
+    ctx.fillStyle = '#ff66aa';
+    ctx.fillRect(2, -22, 6, 6);
 
     ctx.restore();
   }

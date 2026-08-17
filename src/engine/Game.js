@@ -545,67 +545,7 @@ export class Game {
         room.collectibles.push(...coins);
 
         if (enemy.isBoss) {
-          if (enemy.bossName.includes('FALSE KNIGHT')) {
-            this.bossesDefeated.falseKnight = true;
-            if (!this.player.abilities.vengefulSpirit) {
-              const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
-              room.collectibles.push(spellPedestal);
-              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-              this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
-              this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
-            }
-          }
-          if (enemy.bossName.includes('HORNET')) {
-            this.bossesDefeated.hornet = true;
-            if (!this.player.abilities.howlingWraiths) {
-              const wraithPedestal = new AbilityUnlock(400, 606, 'howlingWraiths', 'Howling Wraiths (Spell)');
-              room.collectibles.push(wraithPedestal);
-              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-              this.particles.spawnShockwave(400, 606, 140, '#ffffff');
-              this.particles.spawnHitSparks(400, 606, 24, '#88d6ff');
-            }
-            if (!this.player.abilities.superDash) {
-              const superDashPedestal = new AbilityUnlock(550, 606, 'superDash', 'Crystal Heart (Super Dash - Hold [F])');
-              room.collectibles.push(superDashPedestal);
-              this.particles.spawnShockwave(550, 606, 140, '#ff66cc');
-              this.particles.spawnHitSparks(550, 606, 24, '#ff66cc');
-            }
-          }
-          if (enemy.bossName.includes('SOUL MASTER')) {
-            this.bossesDefeated.soulMaster = true;
-            if (!this.player.abilities.soulOrbs) {
-              const orbPedestal = new AbilityUnlock(1600, 600, 'soulOrbs', 'Soul Spiral (Master\'s Soul Orbs)');
-              room.collectibles.push(orbPedestal);
-              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-              this.particles.spawnShockwave(1600, 600, 140, '#88d6ff');
-              this.particles.spawnHitSparks(1600, 600, 24, '#ffffff');
-            }
-          }
-          if (enemy.bossName.includes('MANTIS LORDS')) {
-            this.bossesDefeated.mantisLords = true;
-            if (!this.player.abilities.doubleJump) {
-              const wingPedestal = new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)');
-              room.collectibles.push(wingPedestal);
-              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-              this.particles.spawnShockwave(1600, 672, 140, '#88ffaa');
-              this.particles.spawnHitSparks(1600, 672, 24, '#ffffff');
-            }
-          }
-          if (enemy.bossName.includes('DUNG DEFENDER')) {
-            this.bossesDefeated.dungDefender = true;
-            if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-            this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#d7ccc8');
-          }
-          if (enemy.bossName.includes('CRYSTAL GUARDIAN')) {
-            this.bossesDefeated.crystalGuardian = true;
-            if (!this.player.abilities.wallJump) {
-              const clawPedestal = new AbilityUnlock(1800, 936, 'wallJump', 'Mantis Claw (Wall Jump)');
-              room.collectibles.push(clawPedestal);
-              if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
-              this.particles.spawnShockwave(1800, 936, 140, '#ff66cc');
-              this.particles.spawnHitSparks(1800, 936, 24, '#ffffff');
-            }
-          }
+          this.handleBossDefeat(enemy, room);
         }
       }
 
@@ -614,16 +554,18 @@ export class Game {
       // Update Active Enemy AI & Physics
       enemy.update(dt, this.player, room, this.sound, this.particles, this.camera);
 
-      // Player Attack vs Enemy Hitbox
-      if (this.player.isAttacking && this.player.attackHitbox && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
+      // Player Attack vs Enemy Hitbox (Guarded by !hasHitThisSwing to prevent multi-frame rapid damage)
+      if (this.player.isAttacking && this.player.attackHitbox && !this.player.hasHitThisSwing && Physics.rectIntersect(this.player.attackHitbox, enemy.getBounds())) {
+        this.player.hasHitThisSwing = true;
         const isDownAttack = this.player.attackDirection === 'down';
-        if (isDownAttack && !this.player.hasHitThisSwing) {
+        if (isDownAttack) {
           this.player.pogoBounce();
           if (this.sound && typeof this.sound.playPogo === 'function') this.sound.playPogo();
         }
-        const nailDmg = typeof this.player.getNailDamage === 'function' ? this.player.getNailDamage() : 5;
+        const nailDmg = typeof this.player.getNailDamage === 'function' ? this.player.getNailDamage() : 4;
         const defeated = enemy.takeDamage(nailDmg, this.player.x + this.player.width / 2, this.sound, this.particles, this.player);
         if (defeated) {
+          this.handleBossDefeat(enemy, room);
           const geoVal = typeof enemy.getGeoReward === 'function' ? enemy.getGeoReward() : (enemy.geoReward || 4);
           const coins = GeoCoin.createMultiDenominations(
             enemy.x + enemy.width / 2,
@@ -686,6 +628,72 @@ export class Game {
     }
     this.camera.setBounds(0, 0, this.world.currentRoom.width, this.world.currentRoom.height);
     this.camera.snapTo(this.player.x, this.player.y);
+  }
+
+  handleBossDefeat(enemy, room) {
+    if (!enemy || !enemy.isBoss) return;
+
+    if (enemy.bossName.includes('FALSE KNIGHT')) {
+      this.bossesDefeated.falseKnight = true;
+      if (!this.player.abilities.vengefulSpirit) {
+        const spellPedestal = new AbilityUnlock(1680, 520, 'vengefulSpirit', 'Vengeful Spirit (Spell)');
+        room.collectibles.push(spellPedestal);
+        if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+        this.particles.spawnShockwave(1680, 520, 140, '#88d6ff');
+        this.particles.spawnHitSparks(1680, 520, 24, '#ffffff');
+      }
+    }
+    if (enemy.bossName.includes('HORNET')) {
+      this.bossesDefeated.hornet = true;
+      if (!this.player.abilities.howlingWraiths) {
+        const wraithPedestal = new AbilityUnlock(400, 606, 'howlingWraiths', 'Howling Wraiths (Spell)');
+        room.collectibles.push(wraithPedestal);
+        if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+        this.particles.spawnShockwave(400, 606, 140, '#ffffff');
+        this.particles.spawnHitSparks(400, 606, 24, '#88d6ff');
+      }
+      if (!this.player.abilities.superDash) {
+        const superDashPedestal = new AbilityUnlock(550, 606, 'superDash', 'Crystal Heart (Super Dash - Hold [F])');
+        room.collectibles.push(superDashPedestal);
+        this.particles.spawnShockwave(550, 606, 140, '#ff66cc');
+        this.particles.spawnHitSparks(550, 606, 24, '#ff66cc');
+      }
+    }
+    if (enemy.bossName.includes('SOUL MASTER')) {
+      this.bossesDefeated.soulMaster = true;
+      if (!this.player.abilities.soulOrbs) {
+        const orbPedestal = new AbilityUnlock(1600, 600, 'soulOrbs', 'Soul Spiral (Master\'s Soul Orbs)');
+        room.collectibles.push(orbPedestal);
+        if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+        this.particles.spawnShockwave(1600, 600, 140, '#88d6ff');
+        this.particles.spawnHitSparks(1600, 600, 24, '#ffffff');
+      }
+    }
+    if (enemy.bossName.includes('MANTIS LORDS')) {
+      this.bossesDefeated.mantisLords = true;
+      if (!this.player.abilities.doubleJump) {
+        const wingPedestal = new AbilityUnlock(1600, 672, 'doubleJump', 'Monarch Wings (Double Jump - Press [Space] mid-air)');
+        room.collectibles.push(wingPedestal);
+        if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+        this.particles.spawnShockwave(1600, 672, 140, '#88ffaa');
+        this.particles.spawnHitSparks(1600, 672, 24, '#ffffff');
+      }
+    }
+    if (enemy.bossName.includes('DUNG DEFENDER')) {
+      this.bossesDefeated.dungDefender = true;
+      if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+      this.particles.spawnShockwave(enemy.x, enemy.y, 140, '#d7ccc8');
+    }
+    if (enemy.bossName.includes('CRYSTAL GUARDIAN')) {
+      this.bossesDefeated.crystalGuardian = true;
+      if (!this.player.abilities.wallJump) {
+        const clawPedestal = new AbilityUnlock(1800, 936, 'wallJump', 'Mantis Claw (Wall Jump)');
+        room.collectibles.push(clawPedestal);
+        if (this.sound && typeof this.sound.playBossRoar === 'function') this.sound.playBossRoar();
+        this.particles.spawnShockwave(1800, 936, 140, '#ff66cc');
+        this.particles.spawnHitSparks(1800, 936, 24, '#ffffff');
+      }
+    }
   }
 
   transitionRoom(roomId, spawnX, spawnY) {
